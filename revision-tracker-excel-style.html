@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Revision Tracker - Excel Style</title>
+  <style>
+    :root {
+      --bg: #f6f8fb;
+      --card: #ffffff;
+      --border: #d8dee9;
+      --border-dark: #b8c2d3;
+      --text: #172033;
+      --muted: #65748b;
+      --header: #edf2f7;
+      --green-bg: #e9f8ee;
+      --green-text: #136f38;
+      --red-bg: #fdecec;
+      --red-text: #a31621;
+      --yellow-bg: #fff7dc;
+      --yellow-text: #8a5a00;
+      --blue-bg: #eaf3ff;
+      --blue-text: #0b5cab;
+      --gray-bg: #eef1f5;
+      --gray-text: #566070;
+      --shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .app {
+      max-width: 1500px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+    }
+
+    .subtitle {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.5;
+      max-width: 900px;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    button {
+      border: 1px solid var(--border-dark);
+      background: #fff;
+      color: var(--text);
+      border-radius: 8px;
+      padding: 9px 12px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: transform 0.06s ease, background 0.15s ease, border-color 0.15s ease;
+      white-space: nowrap;
+    }
+
+    button:hover {
+      background: #f4f7fb;
+      border-color: #8997aa;
+    }
+
+    button:active {
+      transform: translateY(1px);
+    }
+
+    .primary {
+      background: #172033;
+      color: #fff;
+      border-color: #172033;
+    }
+
+    .primary:hover {
+      background: #24304a;
+      border-color: #24304a;
+    }
+
+    .danger {
+      color: var(--red-text);
+      border-color: #efb2b6;
+    }
+
+    .danger:hover {
+      background: var(--red-bg);
+    }
+
+    .success {
+      color: var(--green-text);
+      border-color: #a7ddba;
+    }
+
+    .success:hover {
+      background: var(--green-bg);
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(130px, 1fr));
+      gap: 10px;
+      margin: 16px 0;
+    }
+
+    .stat {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 14px;
+      box-shadow: var(--shadow);
+    }
+
+    .stat .number {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .stat .label {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .rules {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      background: #fbfcff;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .rules strong {
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .rules .mini {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .search {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      min-width: 280px;
+    }
+
+    .search input {
+      width: 100%;
+    }
+
+    .table-wrap {
+      overflow: auto;
+      max-height: 70vh;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      min-width: 1220px;
+      font-size: 14px;
+    }
+
+    thead th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: var(--header);
+      color: #24304a;
+      text-align: left;
+      border-bottom: 1px solid var(--border-dark);
+      border-right: 1px solid var(--border);
+      padding: 10px 8px;
+      white-space: nowrap;
+    }
+
+    tbody td {
+      border-bottom: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+      padding: 6px;
+      background: #fff;
+      vertical-align: middle;
+    }
+
+    tbody tr:hover td {
+      background: #fbfdff;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--text);
+      font: inherit;
+      padding: 7px 8px;
+      border-radius: 6px;
+      outline: none;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 35px;
+      max-height: 110px;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      border-color: #5b8def;
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba(91, 141, 239, 0.13);
+    }
+
+    input[readonly] {
+      color: #344054;
+      font-weight: 600;
+    }
+
+    .col-id { width: 210px; }
+    .col-topic { width: 160px; }
+    .col-tier { width: 95px; }
+    .col-status { width: 130px; }
+    .col-date { width: 145px; }
+    .col-rev { width: 115px; }
+    .col-next { width: 150px; }
+    .col-days { width: 95px; }
+    .col-notes { width: 240px; }
+    .col-actions { width: 260px; }
+
+    .pill {
+      display: inline-block;
+      padding: 6px 9px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .pill.overdue {
+      background: var(--red-bg);
+      color: var(--red-text);
+    }
+
+    .pill.today {
+      background: var(--yellow-bg);
+      color: var(--yellow-text);
+    }
+
+    .pill.upcoming {
+      background: var(--blue-bg);
+      color: var(--blue-text);
+    }
+
+    .pill.done {
+      background: var(--green-bg);
+      color: var(--green-text);
+    }
+
+    .pill.none {
+      background: var(--gray-bg);
+      color: var(--gray-text);
+    }
+
+    tr.overdue td {
+      background: #fff6f6;
+    }
+
+    tr.today td {
+      background: #fffdf2;
+    }
+
+    tr.graduated td {
+      background: #f8fbf9;
+    }
+
+    .actions {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .actions button {
+      padding: 7px 9px;
+      font-size: 12px;
+    }
+
+    .footer-help {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+      padding: 13px 16px;
+      border-top: 1px solid var(--border);
+      background: #fbfcff;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    @media (max-width: 900px) {
+      .app {
+        padding: 14px;
+      }
+
+      .topbar {
+        flex-direction: column;
+      }
+
+      .toolbar {
+        justify-content: flex-start;
+      }
+
+      .stats {
+        grid-template-columns: repeat(2, minmax(130px, 1fr));
+      }
+
+      .rules {
+        grid-template-columns: 1fr;
+      }
+
+      .search {
+        min-width: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="topbar">
+      <div>
+        <h1>Revision Tracker</h1>
+        <p class="subtitle">
+          Type a problem name/ID and the solved date fills automatically. Tier A graduates immediately.
+          Tier B/C follows Rev 1 = +3 days, Rev 2 = +1 week, Rev 3 = +1 month.
+        </p>
+      </div>
+      <div class="toolbar">
+        <button class="primary" id="addRowBtn">+ Add row</button>
+        <button id="exportBtn">Export JSON</button>
+        <button id="importBtn">Import JSON</button>
+        <button class="danger" id="clearBtn">Clear all</button>
+        <input class="hidden" id="importFile" type="file" accept="application/json" />
+      </div>
+    </section>
+
+    <section class="stats">
+      <div class="stat">
+        <div class="number" id="totalCount">0</div>
+        <div class="label">Total problems</div>
+      </div>
+      <div class="stat">
+        <div class="number" id="overdueCount">0</div>
+        <div class="label">Overdue</div>
+      </div>
+      <div class="stat">
+        <div class="number" id="todayCount">0</div>
+        <div class="label">Due today</div>
+      </div>
+      <div class="stat">
+        <div class="number" id="upcomingCount">0</div>
+        <div class="label">Upcoming</div>
+      </div>
+      <div class="stat">
+        <div class="number" id="graduatedCount">0</div>
+        <div class="label">Graduated</div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="rules">
+        <div>
+          <strong>Rules used by this page</strong>
+          <div class="mini">
+            Solved Date auto-fills when Problem is entered. B/C defaults to Revision # 1.
+            Press <b>Revision done</b> after each review: it auto-stamps Last Reviewed and moves the row forward.
+            If status is GRADUATED, next review stays empty.
+          </div>
+        </div>
+        <label class="search">
+          <span class="mini">Search</span>
+          <input id="searchInput" type="search" placeholder="Problem, topic, notes..." />
+        </label>
+      </div>
+
+      <div class="table-wrap">
+        <table id="trackerTable">
+          <thead>
+            <tr>
+              <th class="col-id">Problem name / ID</th>
+              <th class="col-topic">Topic</th>
+              <th class="col-tier">Tier</th>
+              <th class="col-status">Status</th>
+              <th class="col-date">Solved Date</th>
+              <th class="col-date">Last Reviewed</th>
+              <th class="col-rev">Revision #</th>
+              <th class="col-next">Next Review</th>
+              <th class="col-days">Alert</th>
+              <th class="col-notes">Notes</th>
+              <th class="col-actions">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+
+      <div class="footer-help">
+        Date cells use browser calendar pickers. Data is saved in this browser automatically using localStorage.
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const STORAGE_KEY = "revision-tracker-v1";
+    const tbody = document.getElementById("tableBody");
+    const searchInput = document.getElementById("searchInput");
+
+    let rows = loadRows();
+
+    function todayISO() {
+      const d = new Date();
+      return toISODate(d);
+    }
+
+    function parseISODate(value) {
+      if (!value) return null;
+      const parts = value.split("-").map(Number);
+      if (parts.length !== 3 || parts.some(Number.isNaN)) return null;
+      return new Date(parts[0], parts[1] - 1, parts[2]);
+    }
+
+    function toISODate(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    }
+
+    function addDays(date, days) {
+      const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      d.setDate(d.getDate() + days);
+      return d;
+    }
+
+    function addMonths(date, months) {
+      const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      d.setMonth(d.getMonth() + months);
+      return d;
+    }
+
+    function diffInDays(fromISO, toISO) {
+      const from = parseISODate(fromISO);
+      const to = parseISODate(toISO);
+      if (!from || !to) return null;
+      const oneDay = 24 * 60 * 60 * 1000;
+      return Math.round((to - from) / oneDay);
+    }
+
+    function newRow() {
+      return {
+        id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()),
+        problem: "",
+        topic: "",
+        tier: "B",
+        status: "TODO",
+        solvedDate: "",
+        lastReviewed: "",
+        revision: 1,
+        notes: ""
+      };
+    }
+
+    function loadRows() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return [newRow()];
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) && parsed.length ? parsed : [newRow()];
+      } catch {
+        return [newRow()];
+      }
+    }
+
+    function saveRows() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(rows));
+    }
+
+    function normalizeRow(row) {
+      if (!row.problem.trim()) {
+        row.solvedDate = "";
+        row.lastReviewed = row.lastReviewed || "";
+        if (row.status !== "TODO") row.status = "TODO";
+        return row;
+      }
+
+      if (!row.solvedDate) {
+        row.solvedDate = todayISO();
+      }
+
+      if (row.tier === "A") {
+        row.status = "GRADUATED";
+        row.revision = 0;
+        return row;
+      }
+
+      if (row.status === "GRADUATED") {
+        return row;
+      }
+
+      if (!["TODO", "ACTIVE"].includes(row.status)) {
+        row.status = "ACTIVE";
+      }
+
+      if (!row.revision || Number(row.revision) < 1) {
+        row.revision = 1;
+      }
+
+      if (Number(row.revision) > 3) {
+        row.status = "GRADUATED";
+      }
+
+      return row;
+    }
+
+    function getNextReview(row) {
+      normalizeRow(row);
+
+      if (!row.problem.trim()) return "";
+      if (row.tier === "A") return "";
+      if (row.status === "GRADUATED") return "";
+
+      const revision = Number(row.revision || 1);
+      const solved = parseISODate(row.solvedDate);
+      const lastReviewed = parseISODate(row.lastReviewed);
+      if (!solved) return "";
+
+      if (revision === 1) {
+        return toISODate(addDays(solved, 3));
+      }
+
+      if (revision === 2) {
+        const base = lastReviewed || solved;
+        return toISODate(addDays(base, 7));
+      }
+
+      if (revision === 3) {
+        const base = lastReviewed || solved;
+        return toISODate(addMonths(base, 1));
+      }
+
+      return "";
+    }
+
+    function getAlert(row) {
+      const next = getNextReview(row);
+      if (!row.problem.trim()) return { text: "Empty", kind: "none" };
+      if (row.status === "GRADUATED" || row.tier === "A") return { text: "No review", kind: "done" };
+      if (!next) return { text: "No date", kind: "none" };
+
+      const days = diffInDays(todayISO(), next);
+
+      if (days < 0) return { text: `${Math.abs(days)} day(s) overdue`, kind: "overdue" };
+      if (days === 0) return { text: "Due today", kind: "today" };
+      return { text: `In ${days} day(s)`, kind: "upcoming" };
+    }
+
+    function setField(id, field, value) {
+      const row = rows.find(r => r.id === id);
+      if (!row) return;
+
+      if (field === "revision") {
+        row[field] = Number(value);
+      } else {
+        row[field] = value;
+      }
+
+      if (field === "problem" && value.trim() && !row.solvedDate) {
+        row.solvedDate = todayISO();
+        if (row.tier !== "A" && row.status === "TODO") row.status = "ACTIVE";
+        if (row.tier !== "A" && (!row.revision || row.revision < 1)) row.revision = 1;
+      }
+
+      if (field === "tier") {
+        if (value === "A") {
+          row.status = "GRADUATED";
+          row.revision = 0;
+        } else {
+          if (row.status === "GRADUATED" && !row.lastReviewed) row.status = row.problem.trim() ? "ACTIVE" : "TODO";
+          if (!row.revision || row.revision < 1) row.revision = 1;
+        }
+      }
+
+      if (field === "status" && value === "GRADUATED") {
+        row.status = "GRADUATED";
+      }
+
+      normalizeRow(row);
+      saveRows();
+      render();
+    }
+
+    function revisionDone(id) {
+      const row = rows.find(r => r.id === id);
+      if (!row) return;
+
+      normalizeRow(row);
+
+      if (!row.problem.trim()) {
+        alert("Enter a problem name / ID first.");
+        return;
+      }
+
+      if (row.tier === "A" || row.status === "GRADUATED") {
+        row.status = "GRADUATED";
+        saveRows();
+        render();
+        return;
+      }
+
+      row.lastReviewed = todayISO();
+
+      const currentRevision = Number(row.revision || 1);
+      if (currentRevision >= 3) {
+        row.status = "GRADUATED";
+        row.revision = 3;
+      } else {
+        row.revision = currentRevision + 1;
+        row.status = "ACTIVE";
+      }
+
+      saveRows();
+      render();
+    }
+
+    function graduateNow(id) {
+      const row = rows.find(r => r.id === id);
+      if (!row) return;
+      row.status = "GRADUATED";
+      saveRows();
+      render();
+    }
+
+    function deleteRow(id) {
+      rows = rows.filter(r => r.id !== id);
+      if (!rows.length) rows.push(newRow());
+      saveRows();
+      render();
+    }
+
+    function duplicateRow(id) {
+      const row = rows.find(r => r.id === id);
+      if (!row) return;
+      const copy = { ...row, id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()) };
+      rows.splice(rows.findIndex(r => r.id === id) + 1, 0, copy);
+      saveRows();
+      render();
+    }
+
+    function render() {
+      rows.forEach(normalizeRow);
+
+      const query = searchInput.value.trim().toLowerCase();
+      tbody.innerHTML = "";
+
+      let total = 0;
+      let overdue = 0;
+      let dueToday = 0;
+      let upcoming = 0;
+      let graduated = 0;
+
+      rows.forEach(row => {
+        const searchable = `${row.problem} ${row.topic} ${row.tier} ${row.status} ${row.notes}`.toLowerCase();
+        if (query && !searchable.includes(query)) return;
+
+        const nextReview = getNextReview(row);
+        const alertState = getAlert(row);
+
+        if (row.problem.trim()) {
+          total++;
+          if (alertState.kind === "overdue") overdue++;
+          if (alertState.kind === "today") dueToday++;
+          if (alertState.kind === "upcoming") upcoming++;
+          if (row.status === "GRADUATED") graduated++;
+        }
+
+        const tr = document.createElement("tr");
+        if (alertState.kind === "overdue") tr.classList.add("overdue");
+        if (alertState.kind === "today") tr.classList.add("today");
+        if (row.status === "GRADUATED") tr.classList.add("graduated");
+
+        tr.innerHTML = `
+          <td class="col-id">
+            <input value="${escapeHtml(row.problem)}" placeholder="e.g. LeetCode 322 - Coin Change"
+              onchange="setField('${row.id}', 'problem', this.value)" />
+          </td>
+          <td class="col-topic">
+            <input value="${escapeHtml(row.topic)}" placeholder="DP / Graph / SQL"
+              onchange="setField('${row.id}', 'topic', this.value)" />
+          </td>
+          <td class="col-tier">
+            <select onchange="setField('${row.id}', 'tier', this.value)">
+              <option value="A" ${row.tier === "A" ? "selected" : ""}>A</option>
+              <option value="B" ${row.tier === "B" ? "selected" : ""}>B</option>
+              <option value="C" ${row.tier === "C" ? "selected" : ""}>C</option>
+            </select>
+          </td>
+          <td class="col-status">
+            <select onchange="setField('${row.id}', 'status', this.value)">
+              <option value="TODO" ${row.status === "TODO" ? "selected" : ""}>TODO</option>
+              <option value="ACTIVE" ${row.status === "ACTIVE" ? "selected" : ""}>ACTIVE</option>
+              <option value="GRADUATED" ${row.status === "GRADUATED" ? "selected" : ""}>GRADUATED</option>
+            </select>
+          </td>
+          <td class="col-date">
+            <input type="date" value="${escapeHtml(row.solvedDate)}"
+              onchange="setField('${row.id}', 'solvedDate', this.value)" />
+          </td>
+          <td class="col-date">
+            <input type="date" value="${escapeHtml(row.lastReviewed)}"
+              onchange="setField('${row.id}', 'lastReviewed', this.value)" />
+          </td>
+          <td class="col-rev">
+            <select onchange="setField('${row.id}', 'revision', this.value)" ${row.tier === "A" ? "disabled" : ""}>
+              <option value="0" ${Number(row.revision) === 0 ? "selected" : ""}>None</option>
+              <option value="1" ${Number(row.revision) === 1 ? "selected" : ""}>1</option>
+              <option value="2" ${Number(row.revision) === 2 ? "selected" : ""}>2</option>
+              <option value="3" ${Number(row.revision) === 3 ? "selected" : ""}>3</option>
+            </select>
+          </td>
+          <td class="col-next">
+            <input readonly value="${nextReview ? escapeHtml(nextReview) : ""}" placeholder="Auto" />
+          </td>
+          <td class="col-days">
+            <span class="pill ${alertState.kind}">${escapeHtml(alertState.text)}</span>
+          </td>
+          <td class="col-notes">
+            <textarea placeholder="Mistake, pattern, trick..."
+              onchange="setField('${row.id}', 'notes', this.value)">${escapeHtml(row.notes)}</textarea>
+          </td>
+          <td class="col-actions">
+            <div class="actions">
+              <button class="success" onclick="revisionDone('${row.id}')">Revision done</button>
+              <button onclick="graduateNow('${row.id}')">Graduate</button>
+              <button onclick="duplicateRow('${row.id}')">Duplicate</button>
+              <button class="danger" onclick="deleteRow('${row.id}')">Delete</button>
+            </div>
+          </td>
+        `;
+
+        tbody.appendChild(tr);
+      });
+
+      document.getElementById("totalCount").textContent = total;
+      document.getElementById("overdueCount").textContent = overdue;
+      document.getElementById("todayCount").textContent = dueToday;
+      document.getElementById("upcomingCount").textContent = upcoming;
+      document.getElementById("graduatedCount").textContent = graduated;
+
+      saveRows();
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    document.getElementById("addRowBtn").addEventListener("click", () => {
+      rows.push(newRow());
+      saveRows();
+      render();
+      setTimeout(() => {
+        const inputs = tbody.querySelectorAll("tr:last-child input");
+        if (inputs[0]) inputs[0].focus();
+      }, 0);
+    });
+
+    document.getElementById("clearBtn").addEventListener("click", () => {
+      if (!confirm("Clear all saved rows?")) return;
+      rows = [newRow()];
+      saveRows();
+      render();
+    });
+
+    document.getElementById("exportBtn").addEventListener("click", () => {
+      const blob = new Blob([JSON.stringify(rows, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `revision-tracker-${todayISO()}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    });
+
+    document.getElementById("importBtn").addEventListener("click", () => {
+      document.getElementById("importFile").click();
+    });
+
+    document.getElementById("importFile").addEventListener("change", event => {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const imported = JSON.parse(reader.result);
+          if (!Array.isArray(imported)) throw new Error("Invalid file");
+          rows = imported.map(r => ({ ...newRow(), ...r, id: r.id || (crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random())) }));
+          if (!rows.length) rows = [newRow()];
+          saveRows();
+          render();
+        } catch {
+          alert("Could not import this JSON file.");
+        }
+      };
+      reader.readAsText(file);
+      event.target.value = "";
+    });
+
+    searchInput.addEventListener("input", render);
+
+    render();
+
+    window.setField = setField;
+    window.revisionDone = revisionDone;
+    window.graduateNow = graduateNow;
+    window.deleteRow = deleteRow;
+    window.duplicateRow = duplicateRow;
+  </script>
+</body>
+</html>
