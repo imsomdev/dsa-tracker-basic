@@ -486,6 +486,7 @@
   <script>
     const STORAGE_KEY = "revision-tracker-v1";
     const CLOUD_TABLE = "tracker_data";
+    const APP_URL = "https://dsa-tracker-basic.vercel.app/";
     const SUPABASE_URL = "https://znaicbthcbhluumoazrf.supabase.co";
     const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_KIiJoiXSF009sllk2dDIIA_Ci9afKVk";
     const tbody = document.getElementById("tableBody");
@@ -619,7 +620,22 @@
     }
 
     function getAuthRedirectUrl() {
-      return `${window.location.origin}${window.location.pathname}`;
+      return APP_URL;
+    }
+
+    function isEmailConfirmed(user) {
+      return Boolean(user?.email_confirmed_at || user?.confirmed_at);
+    }
+
+    async function rejectUnconfirmedUser(user) {
+      if (!user || isEmailConfirmed(user)) return false;
+
+      currentUser = null;
+      cloudReady = false;
+      await supabaseClient.auth.signOut();
+      setCloudStatus("Confirm your email before signing in.");
+      updateAuthUi();
+      return true;
     }
 
     async function initCloud() {
@@ -638,6 +654,7 @@
 
       clearAuthTokensFromUrl();
       currentUser = data.session?.user || null;
+      if (await rejectUnconfirmedUser(currentUser)) return;
       updateAuthUi();
 
       if (currentUser) {
@@ -647,6 +664,7 @@
       supabaseClient.auth.onAuthStateChange(async (_event, session) => {
         currentUser = session?.user || null;
         cloudReady = false;
+        if (await rejectUnconfirmedUser(currentUser)) return;
         updateAuthUi();
 
         if (currentUser) {
@@ -1061,8 +1079,13 @@
       }
 
       setCloudStatus("Signing in...");
-      const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-      if (error) setCloudStatus(error.message);
+      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+      if (error) {
+        setCloudStatus(error.message);
+        return;
+      }
+
+      await rejectUnconfirmedUser(data.user);
     });
 
     signUpBtn.addEventListener("click", async () => {
@@ -1087,9 +1110,14 @@
         return;
       }
 
-      if (!data.session) {
-        setCloudStatus("Account created. Check your email if Supabase asks for confirmation, then sign in.");
+      if (data.session) {
+        currentUser = null;
+        cloudReady = false;
+        await supabaseClient.auth.signOut();
+        updateAuthUi();
       }
+
+      setCloudStatus("Account created. Check your email to confirm it, then sign in.");
     });
 
     signOutBtn.addEventListener("click", async () => {
