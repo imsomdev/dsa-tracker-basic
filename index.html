@@ -70,6 +70,31 @@
       justify-content: flex-end;
     }
 
+    .authbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      justify-content: flex-end;
+      margin-top: 10px;
+      max-width: 720px;
+    }
+
+    .authbar input {
+      width: 190px;
+      border-color: var(--border-dark);
+      background: #fff;
+    }
+
+    .auth-status {
+      flex-basis: 100%;
+      text-align: right;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.35;
+      min-height: 18px;
+    }
+
     button {
       border: 1px solid var(--border-dark);
       background: #fff;
@@ -380,6 +405,14 @@
         <button id="importBtn">Import JSON</button>
         <button class="danger" id="clearBtn">Clear all</button>
         <input class="hidden" id="importFile" type="file" accept="application/json" />
+        <div class="authbar">
+          <input id="authEmail" type="email" placeholder="Email" autocomplete="email" />
+          <input id="authPassword" type="password" placeholder="Password" autocomplete="current-password" />
+          <button id="signInBtn">Sign in</button>
+          <button id="signUpBtn">Sign up</button>
+          <button id="signOutBtn" class="hidden">Sign out</button>
+          <div id="cloudStatus" class="auth-status">Local only until you sign in.</div>
+        </div>
       </div>
     </section>
 
@@ -444,17 +477,32 @@
       </div>
 
       <div class="footer-help">
-        Date cells use browser calendar pickers. Data is saved in this browser automatically using localStorage.
+        Date cells use browser calendar pickers. Data is saved in this browser automatically using localStorage, and syncs to Supabase when signed in.
       </div>
     </section>
   </main>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     const STORAGE_KEY = "revision-tracker-v1";
+    const CLOUD_TABLE = "tracker_data";
+    const SUPABASE_URL = "https://znaicbthcbhluumoazrf.supabase.co";
+    const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_KIiJoiXSF009sllk2dDIIA_Ci9afKVk";
     const tbody = document.getElementById("tableBody");
     const searchInput = document.getElementById("searchInput");
+    const authEmail = document.getElementById("authEmail");
+    const authPassword = document.getElementById("authPassword");
+    const signInBtn = document.getElementById("signInBtn");
+    const signUpBtn = document.getElementById("signUpBtn");
+    const signOutBtn = document.getElementById("signOutBtn");
+    const cloudStatus = document.getElementById("cloudStatus");
 
     let rows = loadRows();
+    let supabaseClient = null;
+    let currentUser = null;
+    let cloudReady = false;
+    let cloudSaveTimer = null;
+    let isLoadingCloud = false;
 
     function todayISO() {
       const d = new Date();
@@ -514,7 +562,7 @@
         const raw = localStorage.getItem(STORAGE_KEY);
         if (!raw) return [newRow()];
         const parsed = JSON.parse(raw);
-        return Array.isArray(parsed) && parsed.length ? parsed : [newRow()];
+        return normalizeLoadedRows(parsed);
       } catch {
         return [newRow()];
       }
@@ -522,6 +570,147 @@
 
     function saveRows() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(rows));
+      if (cloudReady && currentUser && !isLoadingCloud) {
+        scheduleCloudSave();
+      }
+    }
+
+    function normalizeLoadedRows(value) {
+      if (!Array.isArray(value) || !value.length) return [newRow()];
+      return value.map(r => ({
+        ...newRow(),
+        ...r,
+        id: r.id || (crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()))
+      }));
+    }
+
+    function hasMeaningfulRows(value) {
+      return Array.isArray(value) && value.some(row =>
+        String(row.problem || row.topic || row.notes || row.solvedDate || row.lastReviewed || "").trim()
+      );
+    }
+
+    function setCloudStatus(message) {
+      cloudStatus.textContent = message;
+    }
+
+    function updateAuthUi() {
+      const signedIn = Boolean(currentUser);
+      authEmail.classList.toggle("hidden", signedIn);
+      authPassword.classList.toggle("hidden", signedIn);
+      signInBtn.classList.toggle("hidden", signedIn);
+      signUpBtn.classList.toggle("hidden", signedIn);
+      signOutBtn.classList.toggle("hidden", !signedIn);
+
+      if (signedIn) {
+        setCloudStatus(`Signed in as ${currentUser.email || "user"}. Syncing to Supabase.`);
+      } else {
+        setCloudStatus("Local only until you sign in.");
+      }
+    }
+
+    function clearAuthTokensFromUrl() {
+      const hasAuthTokens = window.location.hash.includes("access_token=") ||
+        window.location.hash.includes("refresh_token=");
+
+      if (hasAuthTokens) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    }
+
+    function getAuthRedirectUrl() {
+      return `${window.location.origin}${window.location.pathname}`;
+    }
+
+    async function initCloud() {
+      if (!window.supabase) {
+        setCloudStatus("Supabase script did not load. Saving locally.");
+        return;
+      }
+
+      supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+
+      const { data, error } = await supabaseClient.auth.getSession();
+      if (error) {
+        setCloudStatus(error.message);
+        return;
+      }
+
+      clearAuthTokensFromUrl();
+      currentUser = data.session?.user || null;
+      updateAuthUi();
+
+      if (currentUser) {
+        await loadRowsFromCloud();
+      }
+
+      supabaseClient.auth.onAuthStateChange(async (_event, session) => {
+        currentUser = session?.user || null;
+        cloudReady = false;
+        updateAuthUi();
+
+        if (currentUser) {
+          await loadRowsFromCloud();
+        } else {
+          render();
+        }
+      });
+    }
+
+    async function loadRowsFromCloud() {
+      if (!supabaseClient || !currentUser) return;
+
+      isLoadingCloud = true;
+      setCloudStatus("Loading cloud data...");
+
+      const { data, error } = await supabaseClient
+        .from(CLOUD_TABLE)
+        .select("rows")
+        .eq("user_id", currentUser.id)
+        .maybeSingle();
+
+      if (error) {
+        isLoadingCloud = false;
+        cloudReady = false;
+        setCloudStatus(`Cloud setup needed: ${error.message}`);
+        render();
+        return;
+      }
+
+      if (data?.rows && hasMeaningfulRows(data.rows)) {
+        rows = normalizeLoadedRows(data.rows);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(rows));
+      }
+
+      cloudReady = true;
+      isLoadingCloud = false;
+      setCloudStatus(`Signed in as ${currentUser.email || "user"}. Cloud sync active.`);
+      render();
+      saveRows();
+    }
+
+    function scheduleCloudSave() {
+      clearTimeout(cloudSaveTimer);
+      cloudSaveTimer = setTimeout(saveRowsToCloud, 600);
+    }
+
+    async function saveRowsToCloud() {
+      if (!supabaseClient || !currentUser) return;
+
+      const { error } = await supabaseClient
+        .from(CLOUD_TABLE)
+        .upsert({
+          user_id: currentUser.id,
+          rows,
+          updated_at: new Date().toISOString()
+        }, { onConflict: "user_id" });
+
+      if (error) {
+        setCloudStatus(`Cloud sync failed: ${error.message}`);
+        return;
+      }
+
+      setCloudStatus(`Saved to Supabase as ${currentUser.email || "user"}.`);
     }
 
     function normalizeRow(row) {
@@ -849,8 +1038,7 @@
         try {
           const imported = JSON.parse(reader.result);
           if (!Array.isArray(imported)) throw new Error("Invalid file");
-          rows = imported.map(r => ({ ...newRow(), ...r, id: r.id || (crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random())) }));
-          if (!rows.length) rows = [newRow()];
+          rows = normalizeLoadedRows(imported);
           saveRows();
           render();
         } catch {
@@ -863,7 +1051,54 @@
 
     searchInput.addEventListener("input", render);
 
+    signInBtn.addEventListener("click", async () => {
+      if (!supabaseClient) return;
+      const email = authEmail.value.trim();
+      const password = authPassword.value;
+      if (!email || !password) {
+        alert("Enter email and password.");
+        return;
+      }
+
+      setCloudStatus("Signing in...");
+      const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+      if (error) setCloudStatus(error.message);
+    });
+
+    signUpBtn.addEventListener("click", async () => {
+      if (!supabaseClient) return;
+      const email = authEmail.value.trim();
+      const password = authPassword.value;
+      if (!email || !password) {
+        alert("Enter email and password.");
+        return;
+      }
+
+      setCloudStatus("Creating account...");
+      const { data, error } = await supabaseClient.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: getAuthRedirectUrl()
+        }
+      });
+      if (error) {
+        setCloudStatus(error.message);
+        return;
+      }
+
+      if (!data.session) {
+        setCloudStatus("Account created. Check your email if Supabase asks for confirmation, then sign in.");
+      }
+    });
+
+    signOutBtn.addEventListener("click", async () => {
+      if (!supabaseClient) return;
+      await supabaseClient.auth.signOut();
+    });
+
     render();
+    initCloud();
 
     window.setField = setField;
     window.revisionDone = revisionDone;
