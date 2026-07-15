@@ -3,484 +3,613 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Revision Tracker - Excel Style</title>
+  <meta name="description" content="A focused revision tracker for DSA practice." />
+  <title>Revision Tracker</title>
   <style>
     :root {
-      --bg: #f6f8fb;
-      --card: #ffffff;
-      --border: #d8dee9;
-      --border-dark: #b8c2d3;
-      --text: #172033;
-      --muted: #65748b;
-      --header: #edf2f7;
-      --green-bg: #e9f8ee;
-      --green-text: #136f38;
-      --red-bg: #fdecec;
-      --red-text: #a31621;
-      --yellow-bg: #fff7dc;
-      --yellow-text: #8a5a00;
-      --blue-bg: #eaf3ff;
-      --blue-text: #0b5cab;
-      --gray-bg: #eef1f5;
-      --gray-text: #566070;
-      --shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+      --bg: #f6f8fa;
+      --surface: #ffffff;
+      --surface-subtle: #f6f8fa;
+      --border: #d8dee4;
+      --border-muted: #e8ebef;
+      --text: #1f2328;
+      --muted: #656d76;
+      --subtle: #8c959f;
+      --accent: #0969da;
+      --accent-hover: #0860ca;
+      --accent-soft: #ddf4ff;
+      --danger: #cf222e;
+      --danger-soft: #ffebe9;
+      --warning: #9a6700;
+      --warning-soft: #fff8c5;
+      --success: #1a7f37;
+      --success-soft: #dafbe1;
+      --radius: 6px;
     }
 
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
       margin: 0;
-      font-family: Arial, Helvetica, sans-serif;
-      background: var(--bg);
+      min-height: 100vh;
       color: var(--text);
+      background: var(--bg);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
     }
 
-    .app {
-      max-width: 1500px;
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; }
+    .hidden { display: none !important; }
+
+    .top-nav {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      height: 56px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.96);
+    }
+
+    .top-nav-inner {
+      width: 100%;
+      max-width: 1480px;
+      height: 100%;
+      margin: 0 auto;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      flex: 0 0 auto;
+      color: var(--text);
+      font-weight: 650;
+      letter-spacing: -0.01em;
+    }
+
+    .brand-mark {
+      width: 25px;
+      height: 25px;
+      display: grid;
+      place-items: center;
+      border: 1px solid #24292f;
+      border-radius: 5px;
+      background: #24292f;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .nav-links {
+      display: flex;
+      align-self: stretch;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    .nav-link {
+      position: relative;
+      height: 100%;
+      padding: 0 11px;
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .nav-link:hover { color: var(--text); }
+    .nav-link.active { color: var(--text); font-weight: 600; }
+    .nav-link.active::after {
+      content: "";
+      position: absolute;
+      right: 10px;
+      bottom: -1px;
+      left: 10px;
+      height: 2px;
+      background: #fd8c73;
+    }
+
+    .account-area { position: relative; margin-left: auto; }
+
+    .account-trigger {
+      min-height: 32px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      max-width: 220px;
+      padding: 5px 9px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      color: var(--text);
+      font-size: 12px;
+    }
+
+    .account-trigger:hover { background: var(--surface-subtle); }
+    .account-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--subtle); }
+    .account-dot.online { background: var(--success); }
+    .account-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .account-popover {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      width: 300px;
+      padding: 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface);
+      box-shadow: 0 8px 24px rgba(140, 149, 159, 0.22);
+    }
+
+    .popover-title { margin: 0 0 3px; font-size: 14px; font-weight: 600; }
+    .popover-copy, .auth-status { margin: 0; color: var(--muted); font-size: 12px; }
+    .auth-form { display: grid; gap: 8px; margin-top: 12px; }
+    .auth-actions { display: flex; gap: 7px; }
+    .auth-actions button { flex: 1; }
+    .auth-status { margin-top: 10px; min-height: 18px; }
+
+    .page-shell {
+      width: 100%;
+      max-width: 1480px;
       margin: 0 auto;
       padding: 24px;
     }
 
-    .topbar {
+    .page-heading {
       display: flex;
-      align-items: flex-start;
       justify-content: space-between;
-      gap: 16px;
-      margin-bottom: 18px;
+      align-items: flex-end;
+      gap: 20px;
+      margin-bottom: 16px;
     }
 
-    h1 {
-      margin: 0 0 8px;
-      font-size: 28px;
+    h1 { margin: 0; font-size: 22px; line-height: 1.3; letter-spacing: -0.02em; }
+    .page-description { margin: 3px 0 0; color: var(--muted); font-size: 13px; }
+
+    .stats-bar {
+      display: flex;
+      align-items: center;
+      min-height: 50px;
+      margin-bottom: 12px;
+      padding: 0 16px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      overflow-x: auto;
     }
 
-    .subtitle {
-      margin: 0;
-      color: var(--muted);
-      line-height: 1.5;
-      max-width: 900px;
+    .stat-item {
+      min-width: 130px;
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      padding: 0 20px;
+      border-right: 1px solid var(--border-muted);
+      white-space: nowrap;
+    }
+
+    .stat-item:first-child { padding-left: 0; }
+    .stat-item:last-child { border-right: 0; }
+    .stat-value { font-size: 16px; font-weight: 650; font-variant-numeric: tabular-nums; }
+    .stat-label { color: var(--muted); font-size: 12px; }
+
+    .workspace {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      overflow: visible;
     }
 
     .toolbar {
+      min-height: 54px;
       display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      justify-content: flex-end;
-    }
-
-    .authbar {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
       align-items: center;
-      justify-content: flex-end;
-      margin-top: 10px;
-      max-width: 720px;
-    }
-
-    .authbar input {
-      width: 190px;
-      border-color: var(--border-dark);
-      background: #fff;
-    }
-
-    .auth-status {
-      flex-basis: 100%;
-      text-align: right;
-      color: var(--muted);
-      font-size: 13px;
-      line-height: 1.35;
-      min-height: 18px;
-    }
-
-    button {
-      border: 1px solid var(--border-dark);
-      background: #fff;
-      color: var(--text);
-      border-radius: 8px;
-      padding: 9px 12px;
-      font-size: 14px;
-      cursor: pointer;
-      transition: transform 0.06s ease, background 0.15s ease, border-color 0.15s ease;
-      white-space: nowrap;
-    }
-
-    button:hover {
-      background: #f4f7fb;
-      border-color: #8997aa;
-    }
-
-    button:active {
-      transform: translateY(1px);
-    }
-
-    .primary {
-      background: #172033;
-      color: #fff;
-      border-color: #172033;
-    }
-
-    .primary:hover {
-      background: #24304a;
-      border-color: #24304a;
-    }
-
-    .danger {
-      color: var(--red-text);
-      border-color: #efb2b6;
-    }
-
-    .danger:hover {
-      background: var(--red-bg);
-    }
-
-    .success {
-      color: var(--green-text);
-      border-color: #a7ddba;
-    }
-
-    .success:hover {
-      background: var(--green-bg);
-    }
-
-    .stats {
-      display: grid;
-      grid-template-columns: repeat(5, minmax(130px, 1fr));
-      gap: 10px;
-      margin: 16px 0;
-    }
-
-    .stat {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 12px 14px;
-      box-shadow: var(--shadow);
-    }
-
-    .stat .number {
-      font-size: 24px;
-      font-weight: 700;
-      margin-bottom: 4px;
-    }
-
-    .stat .label {
-      font-size: 13px;
-      color: var(--muted);
-    }
-
-    .panel {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      box-shadow: var(--shadow);
-      overflow: hidden;
-    }
-
-    .rules {
-      padding: 14px 16px;
+      gap: 8px;
+      padding: 9px 10px;
       border-bottom: 1px solid var(--border);
-      background: #fbfcff;
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 12px;
-      align-items: center;
     }
 
-    .rules strong {
-      display: block;
-      margin-bottom: 6px;
+    .search-field {
+      position: relative;
+      width: min(300px, 28vw);
+      flex: 0 1 300px;
     }
 
-    .rules .mini {
-      color: var(--muted);
-      font-size: 13px;
-      line-height: 1.45;
+    .search-icon {
+      position: absolute;
+      top: 50%;
+      left: 10px;
+      width: 14px;
+      height: 14px;
+      transform: translateY(-50%);
+      color: var(--subtle);
+      pointer-events: none;
     }
 
-    .search {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-      min-width: 280px;
-    }
-
-    .search input {
+    input, select, textarea {
       width: 100%;
-    }
-
-    .table-wrap {
-      overflow: auto;
-      max-height: 70vh;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: separate;
-      border-spacing: 0;
-      min-width: 1220px;
-      font-size: 14px;
-    }
-
-    thead th {
-      position: sticky;
-      top: 0;
-      z-index: 2;
-      background: var(--header);
-      color: #24304a;
-      text-align: left;
-      border-bottom: 1px solid var(--border-dark);
-      border-right: 1px solid var(--border);
-      padding: 10px 8px;
-      white-space: nowrap;
-    }
-
-    tbody td {
-      border-bottom: 1px solid var(--border);
-      border-right: 1px solid var(--border);
-      padding: 6px;
-      background: #fff;
-      vertical-align: middle;
-    }
-
-    tbody tr:hover td {
-      background: #fbfdff;
-    }
-
-    input,
-    select,
-    textarea {
-      width: 100%;
-      border: 1px solid transparent;
-      background: transparent;
       color: var(--text);
-      font: inherit;
-      padding: 7px 8px;
-      border-radius: 6px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
       outline: none;
     }
 
-    textarea {
-      resize: vertical;
-      min-height: 35px;
-      max-height: 110px;
+    input, select { height: 34px; padding: 5px 9px; }
+    .search-field input { padding-left: 31px; }
+    textarea { min-height: 150px; padding: 9px 10px; resize: vertical; line-height: 1.55; }
+    input::placeholder, textarea::placeholder { color: var(--subtle); }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(9, 105, 218, 0.13);
     }
 
-    input:focus,
-    select:focus,
-    textarea:focus {
-      border-color: #5b8def;
-      background: #fff;
-      box-shadow: 0 0 0 3px rgba(91, 141, 239, 0.13);
-    }
+    .filter-select { width: auto; min-width: 112px; color: var(--muted); font-size: 12px; }
+    .toolbar-spacer { flex: 1; }
 
-    input[readonly] {
-      color: #344054;
-      font-weight: 600;
-    }
-
-    .col-id { width: 210px; }
-    .col-topic { width: 160px; }
-    .col-tier { width: 95px; }
-    .col-status { width: 130px; }
-    .col-date { width: 145px; }
-    .col-rev { width: 115px; }
-    .col-next { width: 150px; }
-    .col-days { width: 95px; }
-    .col-notes { width: 240px; }
-    .col-actions { width: 260px; }
-
-    .pill {
-      display: inline-block;
-      padding: 6px 9px;
-      border-radius: 999px;
-      font-weight: 700;
+    .button {
+      min-height: 34px;
+      padding: 5px 11px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface-subtle);
+      color: var(--text);
       font-size: 12px;
+      font-weight: 600;
       white-space: nowrap;
     }
 
-    .pill.overdue {
-      background: var(--red-bg);
-      color: var(--red-text);
-    }
+    .button:hover { background: #eef1f4; }
+    .button.primary { border-color: rgba(27, 31, 36, 0.15); background: #1f883d; color: #fff; }
+    .button.primary:hover { background: #1a7f37; }
+    .button.danger { color: var(--danger); }
+    .button.danger:hover { background: var(--danger-soft); }
+    .button.ghost { background: var(--surface); font-weight: 500; }
+    .button.link-button { min-height: auto; padding: 0; border: 0; background: transparent; color: var(--accent); }
 
-    .pill.today {
-      background: var(--yellow-bg);
-      color: var(--yellow-text);
-    }
-
-    .pill.upcoming {
-      background: var(--blue-bg);
-      color: var(--blue-text);
-    }
-
-    .pill.done {
-      background: var(--green-bg);
-      color: var(--green-text);
-    }
-
-    .pill.none {
-      background: var(--gray-bg);
-      color: var(--gray-text);
-    }
-
-    tr.overdue td {
-      background: #fff6f6;
-    }
-
-    tr.today td {
-      background: #fffdf2;
-    }
-
-    tr.graduated td {
-      background: #f8fbf9;
-    }
-
-    .actions {
-      display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
-    }
-
-    .actions button {
-      padding: 7px 9px;
-      font-size: 12px;
-    }
-
-    .footer-help {
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; min-width: 1080px; border-collapse: collapse; table-layout: fixed; }
+    thead th {
+      height: 38px;
+      padding: 7px 12px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface-subtle);
       color: var(--muted);
-      font-size: 13px;
-      line-height: 1.5;
-      padding: 13px 16px;
-      border-top: 1px solid var(--border);
-      background: #fbfcff;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.025em;
+      text-transform: uppercase;
+      white-space: nowrap;
     }
 
-    .hidden {
-      display: none;
+    tbody tr { border-bottom: 1px solid var(--border-muted); cursor: pointer; }
+    tbody tr:last-child { border-bottom: 0; }
+    tbody tr:hover { background: #f6f8fa; }
+    tbody td { height: 60px; padding: 9px 12px; vertical-align: middle; }
+
+    .col-problem { width: 27%; }
+    .col-topic { width: 13%; }
+    .col-tier { width: 7%; }
+    .col-status { width: 11%; }
+    .col-progress { width: 12%; }
+    .col-next { width: 12%; }
+    .col-last { width: 11%; }
+    .col-actions { width: 160px; }
+
+    .problem-name { overflow: hidden; color: var(--text); font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+    .problem-note-preview { overflow: hidden; margin-top: 2px; color: var(--muted); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+    .cell-muted { overflow: hidden; color: var(--muted); text-overflow: ellipsis; white-space: nowrap; }
+    .cell-date { font-size: 12px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .date-context { margin-top: 1px; color: var(--muted); font-size: 11px; }
+    .date-context.overdue { color: var(--danger); }
+    .date-context.today { color: var(--warning); }
+
+    .tier-label { color: var(--muted); font-size: 12px; font-weight: 600; }
+    .status-label { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; white-space: nowrap; }
+    .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--subtle); }
+    .status-label.active .status-dot { background: var(--accent); }
+    .status-label.graduated .status-dot { background: var(--success); }
+
+    .progress-text { margin-bottom: 4px; color: var(--muted); font-size: 11px; }
+    .progress-track { width: 72px; height: 3px; border-radius: 2px; background: #e8ebef; overflow: hidden; }
+    .progress-fill { height: 100%; background: #57606a; }
+
+    .row-actions { position: relative; display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
+    .review-button { min-height: 30px; padding: 4px 9px; }
+    .more-button {
+      width: 30px;
+      height: 30px;
+      padding: 0;
+      border: 1px solid transparent;
+      border-radius: var(--radius);
+      background: transparent;
+      color: var(--muted);
+      font-size: 18px;
+      line-height: 1;
+    }
+    .more-button:hover { border-color: var(--border); background: var(--surface); color: var(--text); }
+
+    .row-menu {
+      position: absolute;
+      top: 34px;
+      right: 0;
+      z-index: 10;
+      width: 150px;
+      padding: 4px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      box-shadow: 0 8px 20px rgba(140, 149, 159, 0.24);
+    }
+    .row-menu button { width: 100%; padding: 6px 8px; border: 0; border-radius: 4px; background: transparent; text-align: left; font-size: 12px; }
+    .row-menu button:hover { background: var(--surface-subtle); }
+    .row-menu button.danger-item { color: var(--danger); }
+
+    .empty-state { min-height: 360px; display: grid; place-items: center; padding: 40px 20px; text-align: center; }
+    .empty-content { max-width: 390px; }
+    .empty-title { margin: 0 0 6px; font-size: 16px; }
+    .empty-copy { margin: 0 0 18px; color: var(--muted); font-size: 13px; }
+
+    .drawer-layer { position: fixed; inset: 0; z-index: 40; }
+    .drawer-backdrop { position: absolute; inset: 0; background: rgba(31, 35, 40, 0.3); }
+    .drawer {
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: min(480px, 100vw);
+      display: flex;
+      flex-direction: column;
+      border-left: 1px solid var(--border);
+      background: var(--surface);
+      box-shadow: -8px 0 24px rgba(31, 35, 40, 0.1);
+      animation: drawer-in 160ms ease-out;
+    }
+    @keyframes drawer-in { from { transform: translateX(24px); opacity: 0.8; } to { transform: translateX(0); opacity: 1; } }
+
+    .drawer-header { min-height: 58px; display: flex; align-items: center; gap: 10px; padding: 11px 16px; border-bottom: 1px solid var(--border); }
+    .drawer-heading { min-width: 0; flex: 1; }
+    .drawer-eyebrow { margin: 0; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
+    .drawer-title { overflow: hidden; margin: 1px 0 0; font-size: 15px; text-overflow: ellipsis; white-space: nowrap; }
+    .close-button { width: 32px; height: 32px; padding: 0; border: 1px solid transparent; border-radius: var(--radius); background: transparent; color: var(--muted); font-size: 20px; }
+    .close-button:hover { border-color: var(--border); background: var(--surface-subtle); color: var(--text); }
+
+    .drawer-body { flex: 1; overflow-y: auto; padding: 18px; }
+    .field { margin-bottom: 15px; }
+    .field label { display: block; margin-bottom: 5px; color: #3d444d; font-size: 12px; font-weight: 600; }
+    .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .computed-field { min-height: 34px; display: flex; align-items: center; padding: 5px 9px; border: 1px solid var(--border-muted); border-radius: var(--radius); background: var(--surface-subtle); color: var(--muted); font-size: 12px; }
+
+    .history-section { margin-top: 22px; padding-top: 17px; border-top: 1px solid var(--border-muted); }
+    .section-title { margin: 0 0 12px; font-size: 13px; }
+    .history-list { margin: 0; padding: 0; list-style: none; }
+    .history-item { position: relative; display: grid; grid-template-columns: 14px 1fr auto; gap: 8px; padding-bottom: 13px; font-size: 12px; }
+    .history-item::before { content: ""; width: 7px; height: 7px; margin-top: 5px; border: 1px solid var(--subtle); border-radius: 50%; background: var(--surface); }
+    .history-item:not(:last-child)::after { content: ""; position: absolute; top: 13px; bottom: 0; left: 3px; width: 1px; background: var(--border); }
+    .history-date { color: var(--muted); white-space: nowrap; }
+    .history-empty { margin: 0; color: var(--muted); font-size: 12px; }
+
+    .drawer-footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 16px; border-top: 1px solid var(--border); background: var(--surface-subtle); }
+    .drawer-footer-actions { display: flex; gap: 7px; margin-left: auto; }
+    body.drawer-open { overflow: hidden; }
+
+    @media (max-width: 1100px) {
+      .top-nav-inner, .page-shell { padding-left: 16px; padding-right: 16px; }
+      .top-nav-inner { gap: 14px; }
+      .nav-link { padding: 0 8px; }
+      .nav-link.active::after { right: 7px; left: 7px; }
+      .toolbar { flex-wrap: wrap; }
+      .search-field { width: 260px; flex-basis: 260px; }
+      .toolbar-spacer { display: none; }
+      .table-wrap { max-height: calc(100vh - 260px); overflow: auto; }
+      thead th { position: sticky; top: 0; z-index: 2; }
     }
 
-    @media (max-width: 900px) {
-      .app {
-        padding: 14px;
-      }
-
-      .topbar {
-        flex-direction: column;
-      }
-
-      .toolbar {
-        justify-content: flex-start;
-      }
-
-      .stats {
-        grid-template-columns: repeat(2, minmax(130px, 1fr));
-      }
-
-      .rules {
-        grid-template-columns: 1fr;
-      }
-
-      .search {
-        min-width: 0;
-      }
+    @media (max-width: 800px) {
+      .brand span:last-child { display: none; }
+      .top-nav-inner { gap: 8px; }
+      .nav-links { overflow-x: auto; }
+      .nav-link { padding: 0 7px; }
+      .account-trigger { max-width: 110px; }
+      .page-shell { padding-top: 16px; }
+      .stats-bar { padding: 0 12px; }
+      .stat-item { min-width: 116px; padding: 0 14px; }
+      .search-field { width: 100%; flex: 1 0 100%; }
+      .filter-select { flex: 1; }
+      .drawer { width: min(460px, 92vw); }
     }
   </style>
 </head>
 <body>
-  <main class="app">
-    <section class="topbar">
-      <div>
-        <h1>Revision Tracker</h1>
-        <p class="subtitle">
-          Type a problem name/ID and the solved date fills automatically. Tier A graduates immediately.
-          Tier B/C follows Rev 1 = +3 days, Rev 2 = +1 week, Rev 3 = +1 month.
-        </p>
+  <header class="top-nav">
+    <div class="top-nav-inner">
+      <div class="brand" aria-label="Revision Tracker">
+        <span class="brand-mark">RT</span>
+        <span>Revision Tracker</span>
       </div>
-      <div class="toolbar">
-        <button class="primary" id="addRowBtn">+ Add row</button>
-        <button id="exportBtn">Export JSON</button>
-        <button id="importBtn">Import JSON</button>
-        <button class="danger" id="clearBtn">Clear all</button>
-        <input class="hidden" id="importFile" type="file" accept="application/json" />
-        <div class="authbar">
-          <input id="authEmail" type="email" placeholder="Email" autocomplete="email" />
-          <input id="authPassword" type="password" placeholder="Password" autocomplete="current-password" />
-          <button id="signInBtn">Sign in</button>
-          <button id="signUpBtn">Sign up</button>
-          <button id="signOutBtn" class="hidden">Sign out</button>
-          <div id="cloudStatus" class="auth-status">Local only until you sign in.</div>
-        </div>
-      </div>
-    </section>
 
-    <section class="stats">
-      <div class="stat">
-        <div class="number" id="totalCount">0</div>
-        <div class="label">Total problems</div>
-      </div>
-      <div class="stat">
-        <div class="number" id="overdueCount">0</div>
-        <div class="label">Overdue</div>
-      </div>
-      <div class="stat">
-        <div class="number" id="todayCount">0</div>
-        <div class="label">Due today</div>
-      </div>
-      <div class="stat">
-        <div class="number" id="upcomingCount">0</div>
-        <div class="label">Upcoming</div>
-      </div>
-      <div class="stat">
-        <div class="number" id="graduatedCount">0</div>
-        <div class="label">Graduated</div>
-      </div>
-    </section>
+      <nav class="nav-links" aria-label="Problem views">
+        <button class="nav-link active" data-view="all">Problems</button>
+        <button class="nav-link" data-view="today">Due Today</button>
+        <button class="nav-link" data-view="overdue">Overdue</button>
+        <button class="nav-link" data-view="graduated">Graduated</button>
+      </nav>
 
-    <section class="panel">
-      <div class="rules">
-        <div>
-          <strong>Rules used by this page</strong>
-          <div class="mini">
-            Solved Date auto-fills when Problem is entered. B/C defaults to Revision # 1.
-            Press <b>Revision done</b> after each review: it auto-stamps Last Reviewed and moves the row forward.
-            If status is GRADUATED, next review stays empty.
+      <div class="account-area" id="accountArea">
+        <button class="account-trigger" id="accountTrigger" type="button" aria-expanded="false">
+          <span class="account-dot" id="accountDot"></span>
+          <span class="account-label" id="accountLabel">Sign in</span>
+        </button>
+        <div class="account-popover hidden" id="accountPopover">
+          <div id="signedOutView">
+            <p class="popover-title">Sync your workspace</p>
+            <p class="popover-copy">Sign in to keep your tracker available across devices.</p>
+            <div class="auth-form">
+              <input id="authEmail" type="email" placeholder="Email address" autocomplete="email" />
+              <input id="authPassword" type="password" placeholder="Password" autocomplete="current-password" />
+              <div class="auth-actions">
+                <button class="button primary" id="signInBtn" type="button">Sign in</button>
+                <button class="button" id="signUpBtn" type="button">Create account</button>
+              </div>
+            </div>
           </div>
+          <div class="hidden" id="signedInView">
+            <p class="popover-title" id="signedInEmail">Account</p>
+            <p class="popover-copy">Cloud sync is active for this workspace.</p>
+            <button class="button danger" id="signOutBtn" type="button" style="width:100%;margin-top:12px">Sign out</button>
+          </div>
+          <p class="auth-status" id="cloudStatus">Saved locally on this device.</p>
         </div>
-        <label class="search">
-          <span class="mini">Search</span>
-          <input id="searchInput" type="search" placeholder="Problem, topic, notes..." />
+      </div>
+    </div>
+  </header>
+
+  <main class="page-shell">
+    <header class="page-heading">
+      <div>
+        <h1 id="viewTitle">Problems</h1>
+        <p class="page-description" id="viewDescription">Manage your practice queue and revision schedule.</p>
+      </div>
+    </header>
+
+    <section class="stats-bar" aria-label="Revision statistics">
+      <div class="stat-item"><span class="stat-value" id="totalCount">0</span><span class="stat-label">Total problems</span></div>
+      <div class="stat-item"><span class="stat-value" id="overdueCount">0</span><span class="stat-label">Overdue</span></div>
+      <div class="stat-item"><span class="stat-value" id="todayCount">0</span><span class="stat-label">Due today</span></div>
+      <div class="stat-item"><span class="stat-value" id="upcomingCount">0</span><span class="stat-label">Upcoming</span></div>
+      <div class="stat-item"><span class="stat-value" id="graduatedCount">0</span><span class="stat-label">Graduated</span></div>
+    </section>
+
+    <section class="workspace">
+      <div class="toolbar">
+        <label class="search-field">
+          <svg class="search-icon" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="7" cy="7" r="4.5" stroke="currentColor"/><path d="m10.5 10.5 3 3" stroke="currentColor" stroke-linecap="round"/></svg>
+          <input id="searchInput" type="search" placeholder="Search problems or notes" aria-label="Search problems" />
         </label>
+        <select class="filter-select" id="topicFilter" aria-label="Filter by topic"><option value="">All topics</option></select>
+        <select class="filter-select" id="tierFilter" aria-label="Filter by tier">
+          <option value="">All tiers</option><option value="A">Tier A</option><option value="B">Tier B</option><option value="C">Tier C</option>
+        </select>
+        <select class="filter-select" id="statusFilter" aria-label="Filter by status">
+          <option value="">All statuses</option><option value="TODO">Todo</option><option value="ACTIVE">Active</option><option value="GRADUATED">Graduated</option>
+        </select>
+        <span class="toolbar-spacer"></span>
+        <button class="button ghost" id="importBtn" type="button">Import</button>
+        <button class="button ghost" id="exportBtn" type="button">Export</button>
+        <button class="button primary" id="addProblemBtn" type="button">Add Problem</button>
+        <input class="hidden" id="importFile" type="file" accept="application/json" />
       </div>
 
-      <div class="table-wrap">
-        <table id="trackerTable">
+      <div class="table-wrap" id="tableWrap">
+        <table id="problemsTable">
           <thead>
             <tr>
-              <th class="col-id">Problem name / ID</th>
+              <th class="col-problem">Problem</th>
               <th class="col-topic">Topic</th>
               <th class="col-tier">Tier</th>
               <th class="col-status">Status</th>
-              <th class="col-date">Solved Date</th>
-              <th class="col-date">Last Reviewed</th>
-              <th class="col-rev">Revision #</th>
-              <th class="col-next">Next Review</th>
-              <th class="col-days">Alert</th>
-              <th class="col-notes">Notes</th>
-              <th class="col-actions">Actions</th>
+              <th class="col-progress">Revision progress</th>
+              <th class="col-next">Next review</th>
+              <th class="col-last">Last reviewed</th>
+              <th class="col-actions"><span class="hidden">Actions</span></th>
             </tr>
           </thead>
           <tbody id="tableBody"></tbody>
         </table>
       </div>
 
-      <div class="footer-help">
-        Date cells use browser calendar pickers. Data is saved in this browser automatically using localStorage, and syncs to Supabase when signed in.
+      <div class="empty-state hidden" id="emptyState">
+        <div class="empty-content">
+          <h2 class="empty-title" id="emptyTitle">No problems yet</h2>
+          <p class="empty-copy" id="emptyCopy">Add your first problem to start building a revision queue.</p>
+          <button class="button primary" id="emptyActionBtn" type="button">Add your first problem</button>
+        </div>
       </div>
     </section>
   </main>
+
+  <div class="drawer-layer hidden" id="drawerLayer" role="dialog" aria-modal="true" aria-labelledby="drawerTitle">
+    <div class="drawer-backdrop" id="drawerBackdrop"></div>
+    <aside class="drawer">
+      <header class="drawer-header">
+        <div class="drawer-heading">
+          <p class="drawer-eyebrow" id="drawerEyebrow">Problem details</p>
+          <h2 class="drawer-title" id="drawerTitle">New problem</h2>
+        </div>
+        <button class="close-button" id="closeDrawerBtn" type="button" aria-label="Close details">×</button>
+      </header>
+
+      <div class="drawer-body">
+        <div class="field">
+          <label for="detailProblem">Problem name or ID</label>
+          <input id="detailProblem" type="text" placeholder="e.g. LeetCode 322 — Coin Change" required />
+        </div>
+        <div class="field">
+          <label for="detailTopic">Topic</label>
+          <input id="detailTopic" type="text" placeholder="Dynamic Programming" list="topicSuggestions" />
+          <datalist id="topicSuggestions"></datalist>
+        </div>
+        <div class="field-grid">
+          <div class="field">
+            <label for="detailTier">Tier</label>
+            <select id="detailTier"><option value="A">Tier A</option><option value="B">Tier B</option><option value="C">Tier C</option></select>
+          </div>
+          <div class="field">
+            <label for="detailStatus">Status</label>
+            <select id="detailStatus"><option value="TODO">Todo</option><option value="ACTIVE">Active</option><option value="GRADUATED">Graduated</option></select>
+          </div>
+        </div>
+        <div class="field-grid">
+          <div class="field">
+            <label for="detailSolvedDate">Solved date</label>
+            <input id="detailSolvedDate" type="date" />
+          </div>
+          <div class="field">
+            <label for="detailRevision">Review number</label>
+            <select id="detailRevision"><option value="0">Not started</option><option value="1">Revision 1</option><option value="2">Revision 2</option><option value="3">Revision 3</option></select>
+          </div>
+        </div>
+        <div class="field-grid">
+          <div class="field">
+            <label>Next review</label>
+            <div class="computed-field" id="detailNextReview">Not scheduled</div>
+          </div>
+          <div class="field">
+            <label for="detailLastReviewed">Last reviewed</label>
+            <input id="detailLastReviewed" type="date" />
+          </div>
+        </div>
+        <div class="field">
+          <label for="detailNotes">Notes</label>
+          <textarea id="detailNotes" placeholder="Approach, edge cases, mistakes to avoid, and useful patterns..."></textarea>
+        </div>
+
+        <section class="history-section">
+          <h3 class="section-title">Revision history</h3>
+          <ul class="history-list" id="historyList"></ul>
+          <p class="history-empty" id="historyEmpty">No reviews recorded yet.</p>
+        </section>
+      </div>
+
+      <footer class="drawer-footer">
+        <button class="button hidden" id="drawerReviewBtn" type="button">Mark reviewed</button>
+        <div class="drawer-footer-actions">
+          <button class="button ghost" id="cancelDrawerBtn" type="button">Cancel</button>
+          <button class="button primary" id="saveProblemBtn" type="button">Save changes</button>
+        </div>
+      </footer>
+    </aside>
+  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
@@ -489,650 +618,531 @@
     const APP_URL = "https://dsa-tracker-basic.vercel.app/";
     const SUPABASE_URL = "https://znaicbthcbhluumoazrf.supabase.co";
     const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_KIiJoiXSF009sllk2dDIIA_Ci9afKVk";
-    const tbody = document.getElementById("tableBody");
-    const searchInput = document.getElementById("searchInput");
-    const authEmail = document.getElementById("authEmail");
-    const authPassword = document.getElementById("authPassword");
-    const signInBtn = document.getElementById("signInBtn");
-    const signUpBtn = document.getElementById("signUpBtn");
-    const signOutBtn = document.getElementById("signOutBtn");
-    const cloudStatus = document.getElementById("cloudStatus");
+
+    const $ = id => document.getElementById(id);
+    const tbody = $("tableBody");
+    const searchInput = $("searchInput");
+    const topicFilter = $("topicFilter");
+    const tierFilter = $("tierFilter");
+    const statusFilter = $("statusFilter");
+    const drawerLayer = $("drawerLayer");
 
     let rows = loadRows();
+    let activeView = "all";
+    let openMenuId = null;
+    let editingId = null;
+    let detailDraft = null;
     let supabaseClient = null;
     let currentUser = null;
     let cloudReady = false;
     let cloudSaveTimer = null;
     let isLoadingCloud = false;
 
-    function todayISO() {
-      const d = new Date();
-      return toISODate(d);
+    function todayISO() { return toISODate(new Date()); }
+    function toISODate(date) {
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
     }
-
     function parseISODate(value) {
       if (!value) return null;
       const parts = value.split("-").map(Number);
       if (parts.length !== 3 || parts.some(Number.isNaN)) return null;
       return new Date(parts[0], parts[1] - 1, parts[2]);
     }
-
-    function toISODate(date) {
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, "0");
-      const day = String(date.getDate()).padStart(2, "0");
-      return `${year}-${month}-${day}`;
-    }
-
     function addDays(date, days) {
-      const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-      d.setDate(d.getDate() + days);
-      return d;
+      const result = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      result.setDate(result.getDate() + days);
+      return result;
     }
-
     function addMonths(date, months) {
-      const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-      d.setMonth(d.getMonth() + months);
-      return d;
+      const result = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      result.setMonth(result.getMonth() + months);
+      return result;
     }
-
     function diffInDays(fromISO, toISO) {
       const from = parseISODate(fromISO);
       const to = parseISODate(toISO);
       if (!from || !to) return null;
-      const oneDay = 24 * 60 * 60 * 1000;
-      return Math.round((to - from) / oneDay);
+      return Math.round((to - from) / 86400000);
     }
-
+    function formatDate(value) {
+      const date = parseISODate(value);
+      if (!date) return "—";
+      return date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+    }
+    function makeId() {
+      return crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random());
+    }
     function newRow() {
-      return {
-        id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()),
-        problem: "",
-        topic: "",
-        tier: "B",
-        status: "TODO",
-        solvedDate: "",
-        lastReviewed: "",
-        revision: 1,
-        notes: ""
-      };
+      return { id: makeId(), problem: "", topic: "", tier: "B", status: "TODO", solvedDate: "", lastReviewed: "", revision: 1, notes: "", history: [] };
     }
-
+    function isMeaningful(row) {
+      return Boolean(String(row.problem || row.topic || row.notes || row.solvedDate || row.lastReviewed || "").trim());
+    }
+    function normalizeLoadedRows(value) {
+      if (!Array.isArray(value)) return [];
+      return value.map(row => ({ ...newRow(), ...row, id: row.id || makeId(), history: Array.isArray(row.history) ? row.history : [] })).filter(isMeaningful);
+    }
     function loadRows() {
-      try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) return [newRow()];
-        const parsed = JSON.parse(raw);
-        return normalizeLoadedRows(parsed);
-      } catch {
-        return [newRow()];
-      }
+      try { return normalizeLoadedRows(JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]")); }
+      catch { return []; }
     }
-
     function saveRows() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(rows));
-      if (cloudReady && currentUser && !isLoadingCloud) {
-        scheduleCloudSave();
-      }
-    }
-
-    function normalizeLoadedRows(value) {
-      if (!Array.isArray(value) || !value.length) return [newRow()];
-      return value.map(r => ({
-        ...newRow(),
-        ...r,
-        id: r.id || (crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()))
-      }));
-    }
-
-    function hasMeaningfulRows(value) {
-      return Array.isArray(value) && value.some(row =>
-        String(row.problem || row.topic || row.notes || row.solvedDate || row.lastReviewed || "").trim()
-      );
-    }
-
-    function setCloudStatus(message) {
-      cloudStatus.textContent = message;
-    }
-
-    function updateAuthUi() {
-      const signedIn = Boolean(currentUser);
-      authEmail.classList.toggle("hidden", signedIn);
-      authPassword.classList.toggle("hidden", signedIn);
-      signInBtn.classList.toggle("hidden", signedIn);
-      signUpBtn.classList.toggle("hidden", signedIn);
-      signOutBtn.classList.toggle("hidden", !signedIn);
-
-      if (signedIn) {
-        setCloudStatus(`Signed in as ${currentUser.email || "user"}. Syncing to Supabase.`);
-      } else {
-        setCloudStatus("Local only until you sign in.");
-      }
-    }
-
-    function clearAuthTokensFromUrl() {
-      const hasAuthTokens = window.location.hash.includes("access_token=") ||
-        window.location.hash.includes("refresh_token=");
-
-      if (hasAuthTokens) {
-        window.history.replaceState({}, document.title, window.location.pathname);
-      }
-    }
-
-    function getAuthRedirectUrl() {
-      return APP_URL;
-    }
-
-    function isEmailConfirmed(user) {
-      return Boolean(user?.email_confirmed_at || user?.confirmed_at);
-    }
-
-    async function rejectUnconfirmedUser(user) {
-      if (!user || isEmailConfirmed(user)) return false;
-
-      currentUser = null;
-      cloudReady = false;
-      await supabaseClient.auth.signOut();
-      setCloudStatus("Confirm your email before signing in.");
-      updateAuthUi();
-      return true;
-    }
-
-    async function initCloud() {
-      if (!window.supabase) {
-        setCloudStatus("Supabase script did not load. Saving locally.");
-        return;
-      }
-
-      supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
-
-      const { data, error } = await supabaseClient.auth.getSession();
-      if (error) {
-        setCloudStatus(error.message);
-        return;
-      }
-
-      clearAuthTokensFromUrl();
-      currentUser = data.session?.user || null;
-      if (await rejectUnconfirmedUser(currentUser)) return;
-      updateAuthUi();
-
-      if (currentUser) {
-        await loadRowsFromCloud();
-      }
-
-      supabaseClient.auth.onAuthStateChange(async (_event, session) => {
-        currentUser = session?.user || null;
-        cloudReady = false;
-        if (await rejectUnconfirmedUser(currentUser)) return;
-        updateAuthUi();
-
-        if (currentUser) {
-          await loadRowsFromCloud();
-        } else {
-          render();
-        }
-      });
-    }
-
-    async function loadRowsFromCloud() {
-      if (!supabaseClient || !currentUser) return;
-
-      isLoadingCloud = true;
-      setCloudStatus("Loading cloud data...");
-
-      const { data, error } = await supabaseClient
-        .from(CLOUD_TABLE)
-        .select("rows")
-        .eq("user_id", currentUser.id)
-        .maybeSingle();
-
-      if (error) {
-        isLoadingCloud = false;
-        cloudReady = false;
-        setCloudStatus(`Cloud setup needed: ${error.message}`);
-        render();
-        return;
-      }
-
-      if (data?.rows && hasMeaningfulRows(data.rows)) {
-        rows = normalizeLoadedRows(data.rows);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(rows));
-      }
-
-      cloudReady = true;
-      isLoadingCloud = false;
-      setCloudStatus(`Signed in as ${currentUser.email || "user"}. Cloud sync active.`);
-      render();
-      saveRows();
-    }
-
-    function scheduleCloudSave() {
-      clearTimeout(cloudSaveTimer);
-      cloudSaveTimer = setTimeout(saveRowsToCloud, 600);
-    }
-
-    async function saveRowsToCloud() {
-      if (!supabaseClient || !currentUser) return;
-
-      const { error } = await supabaseClient
-        .from(CLOUD_TABLE)
-        .upsert({
-          user_id: currentUser.id,
-          rows,
-          updated_at: new Date().toISOString()
-        }, { onConflict: "user_id" });
-
-      if (error) {
-        setCloudStatus(`Cloud sync failed: ${error.message}`);
-        return;
-      }
-
-      setCloudStatus(`Saved to Supabase as ${currentUser.email || "user"}.`);
+      if (cloudReady && currentUser && !isLoadingCloud) scheduleCloudSave();
     }
 
     function normalizeRow(row) {
-      if (!row.problem.trim()) {
-        row.solvedDate = "";
-        row.lastReviewed = row.lastReviewed || "";
-        if (row.status !== "TODO") row.status = "TODO";
-        return row;
-      }
-
-      if (!row.solvedDate) {
-        row.solvedDate = todayISO();
-      }
-
+      if (!row.problem.trim()) return row;
+      if (!row.solvedDate) row.solvedDate = todayISO();
       if (row.tier === "A") {
         row.status = "GRADUATED";
         row.revision = 0;
         return row;
       }
-
-      if (row.status === "GRADUATED") {
-        return row;
-      }
-
-      if (!["TODO", "ACTIVE"].includes(row.status)) {
-        row.status = "ACTIVE";
-      }
-
-      if (!row.revision || Number(row.revision) < 1) {
-        row.revision = 1;
-      }
-
-      if (Number(row.revision) > 3) {
-        row.status = "GRADUATED";
-      }
-
+      if (row.status === "GRADUATED") return row;
+      if (!row.revision || Number(row.revision) < 1) row.revision = 1;
+      if (Number(row.revision) > 3) row.status = "GRADUATED";
+      if (row.status === "TODO" && row.problem.trim()) row.status = "ACTIVE";
       return row;
     }
 
     function getNextReview(row) {
-      normalizeRow(row);
-
-      if (!row.problem.trim()) return "";
-      if (row.tier === "A") return "";
-      if (row.status === "GRADUATED") return "";
-
+      if (!row.problem.trim() || row.tier === "A" || row.status === "GRADUATED") return "";
       const revision = Number(row.revision || 1);
       const solved = parseISODate(row.solvedDate);
-      const lastReviewed = parseISODate(row.lastReviewed);
+      const last = parseISODate(row.lastReviewed);
       if (!solved) return "";
-
-      if (revision === 1) {
-        return toISODate(addDays(solved, 3));
-      }
-
-      if (revision === 2) {
-        const base = lastReviewed || solved;
-        return toISODate(addDays(base, 7));
-      }
-
-      if (revision === 3) {
-        const base = lastReviewed || solved;
-        return toISODate(addMonths(base, 1));
-      }
-
+      if (revision === 1) return toISODate(addDays(solved, 3));
+      if (revision === 2) return toISODate(addDays(last || solved, 7));
+      if (revision === 3) return toISODate(addMonths(last || solved, 1));
       return "";
     }
 
     function getAlert(row) {
+      if (row.status === "GRADUATED" || row.tier === "A") return { kind: "graduated", text: "Complete" };
       const next = getNextReview(row);
-      if (!row.problem.trim()) return { text: "Empty", kind: "none" };
-      if (row.status === "GRADUATED" || row.tier === "A") return { text: "No review", kind: "done" };
-      if (!next) return { text: "No date", kind: "none" };
-
+      if (!next) return { kind: "none", text: "Not scheduled" };
       const days = diffInDays(todayISO(), next);
-
-      if (days < 0) return { text: `${Math.abs(days)} day(s) overdue`, kind: "overdue" };
-      if (days === 0) return { text: "Due today", kind: "today" };
-      return { text: `In ${days} day(s)`, kind: "upcoming" };
+      if (days < 0) return { kind: "overdue", text: `${Math.abs(days)}d overdue` };
+      if (days === 0) return { kind: "today", text: "Due today" };
+      return { kind: "upcoming", text: `In ${days}d` };
     }
 
-    function setField(id, field, value) {
-      const row = rows.find(r => r.id === id);
-      if (!row) return;
+    function getStats() {
+      const stats = { total: rows.length, overdue: 0, today: 0, upcoming: 0, graduated: 0 };
+      rows.forEach(row => {
+        const alert = getAlert(row);
+        if (alert.kind === "overdue") stats.overdue++;
+        if (alert.kind === "today") stats.today++;
+        if (alert.kind === "upcoming") stats.upcoming++;
+        if (row.status === "GRADUATED") stats.graduated++;
+      });
+      return stats;
+    }
 
-      if (field === "revision") {
-        row[field] = Number(value);
-      } else {
-        row[field] = value;
+    function getVisibleRows() {
+      const query = searchInput.value.trim().toLowerCase();
+      return rows.filter(row => {
+        const alert = getAlert(row);
+        if (activeView === "today" && alert.kind !== "today") return false;
+        if (activeView === "overdue" && alert.kind !== "overdue") return false;
+        if (activeView === "graduated" && row.status !== "GRADUATED") return false;
+        if (topicFilter.value && row.topic !== topicFilter.value) return false;
+        if (tierFilter.value && row.tier !== tierFilter.value) return false;
+        if (statusFilter.value && row.status !== statusFilter.value) return false;
+        const haystack = `${row.problem} ${row.topic} ${row.notes}`.toLowerCase();
+        return !query || haystack.includes(query);
+      });
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;");
+    }
+
+    function updateTopicOptions() {
+      const current = topicFilter.value;
+      const topics = [...new Set(rows.map(row => row.topic.trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+      topicFilter.innerHTML = `<option value="">All topics</option>${topics.map(topic => `<option value="${escapeHtml(topic)}">${escapeHtml(topic)}</option>`).join("")}`;
+      topicFilter.value = topics.includes(current) ? current : "";
+      $("topicSuggestions").innerHTML = topics.map(topic => `<option value="${escapeHtml(topic)}"></option>`).join("");
+    }
+
+    function render() {
+      rows.forEach(normalizeRow);
+      updateTopicOptions();
+      const visibleRows = getVisibleRows();
+      const stats = getStats();
+      $("totalCount").textContent = stats.total;
+      $("overdueCount").textContent = stats.overdue;
+      $("todayCount").textContent = stats.today;
+      $("upcomingCount").textContent = stats.upcoming;
+      $("graduatedCount").textContent = stats.graduated;
+
+      const viewMeta = {
+        all: ["Problems", "Manage your practice queue and revision schedule."],
+        today: ["Due Today", "Problems scheduled for review today."],
+        overdue: ["Overdue", "Reviews that need your attention."],
+        graduated: ["Graduated", "Problems that have completed the revision cycle."]
+      }[activeView];
+      $("viewTitle").textContent = viewMeta[0];
+      $("viewDescription").textContent = viewMeta[1];
+      document.querySelectorAll(".nav-link").forEach(button => button.classList.toggle("active", button.dataset.view === activeView));
+
+      tbody.innerHTML = visibleRows.map(row => {
+        const alert = getAlert(row);
+        const next = getNextReview(row);
+        const revision = row.status === "GRADUATED" ? 3 : Math.max(0, Number(row.revision || 0) - 1);
+        const progress = Math.min(100, (revision / 3) * 100);
+        const statusClass = row.status.toLowerCase();
+        const menuOpen = openMenuId === row.id;
+        return `
+          <tr onclick="openDetails('${row.id}')">
+            <td class="col-problem"><div class="problem-name">${escapeHtml(row.problem || "Untitled problem")}</div><div class="problem-note-preview">${escapeHtml(row.notes || "No notes added")}</div></td>
+            <td class="col-topic"><div class="cell-muted">${escapeHtml(row.topic || "—")}</div></td>
+            <td class="col-tier"><span class="tier-label">Tier ${escapeHtml(row.tier)}</span></td>
+            <td class="col-status"><span class="status-label ${statusClass}"><span class="status-dot"></span>${row.status === "TODO" ? "Todo" : row.status === "ACTIVE" ? "Active" : "Graduated"}</span></td>
+            <td class="col-progress"><div class="progress-text">${revision} of 3 reviews</div><div class="progress-track"><div class="progress-fill" style="width:${progress}%"></div></div></td>
+            <td class="col-next"><div class="cell-date">${formatDate(next)}</div><div class="date-context ${alert.kind}">${escapeHtml(alert.text)}</div></td>
+            <td class="col-last"><div class="cell-date">${formatDate(row.lastReviewed)}</div></td>
+            <td class="col-actions" onclick="event.stopPropagation()">
+              <div class="row-actions">
+                <button class="button review-button" type="button" onclick="markReviewed('${row.id}')" ${row.status === "GRADUATED" ? "disabled" : ""}>${row.status === "GRADUATED" ? "Reviewed" : "Mark reviewed"}</button>
+                <button class="more-button" type="button" aria-label="More actions" aria-expanded="${menuOpen}" onclick="toggleRowMenu('${row.id}')">⋯</button>
+                <div class="row-menu ${menuOpen ? "" : "hidden"}">
+                  <button type="button" onclick="openDetails('${row.id}')">Edit details</button>
+                  <button type="button" onclick="duplicateRow('${row.id}')">Duplicate</button>
+                  <button type="button" onclick="graduateNow('${row.id}')">Graduate</button>
+                  <button class="danger-item" type="button" onclick="deleteRow('${row.id}')">Delete</button>
+                </div>
+              </div>
+            </td>
+          </tr>`;
+      }).join("");
+
+      const hasFilters = Boolean(searchInput.value || topicFilter.value || tierFilter.value || statusFilter.value || activeView !== "all");
+      const isEmpty = visibleRows.length === 0;
+      $("tableWrap").classList.toggle("hidden", isEmpty);
+      $("emptyState").classList.toggle("hidden", !isEmpty);
+      if (isEmpty) {
+        $("emptyTitle").textContent = rows.length && hasFilters ? "No matching problems" : "No problems yet";
+        $("emptyCopy").textContent = rows.length && hasFilters ? "Try changing your search or filters to see more results." : "Add your first problem to start building a revision queue.";
+        $("emptyActionBtn").textContent = rows.length && hasFilters ? "Clear filters" : "Add your first problem";
       }
-
-      if (field === "problem" && value.trim() && !row.solvedDate) {
-        row.solvedDate = todayISO();
-        if (row.tier !== "A" && row.status === "TODO") row.status = "ACTIVE";
-        if (row.tier !== "A" && (!row.revision || row.revision < 1)) row.revision = 1;
-      }
-
-      if (field === "tier") {
-        if (value === "A") {
-          row.status = "GRADUATED";
-          row.revision = 0;
-        } else {
-          if (row.status === "GRADUATED" && !row.lastReviewed) row.status = row.problem.trim() ? "ACTIVE" : "TODO";
-          if (!row.revision || row.revision < 1) row.revision = 1;
-        }
-      }
-
-      if (field === "status" && value === "GRADUATED") {
-        row.status = "GRADUATED";
-      }
-
-      normalizeRow(row);
       saveRows();
+    }
+
+    function toggleRowMenu(id) {
+      openMenuId = openMenuId === id ? null : id;
       render();
     }
 
-    function revisionDone(id) {
-      const row = rows.find(r => r.id === id);
-      if (!row) return;
+    function openDetails(id = null) {
+      openMenuId = null;
+      editingId = id;
+      const existing = id ? rows.find(row => row.id === id) : null;
+      detailDraft = existing ? structuredClone(existing) : newRow();
+      $("drawerEyebrow").textContent = existing ? "Problem details" : "New problem";
+      $("drawerTitle").textContent = existing ? existing.problem : "New problem";
+      $("saveProblemBtn").textContent = existing ? "Save changes" : "Add problem";
+      $("drawerReviewBtn").classList.toggle("hidden", !existing || existing.status === "GRADUATED");
+      fillDetailsForm();
+      drawerLayer.classList.remove("hidden");
+      document.body.classList.add("drawer-open");
+      setTimeout(() => $("detailProblem").focus(), 0);
+    }
 
-      normalizeRow(row);
+    function fillDetailsForm() {
+      $("detailProblem").value = detailDraft.problem || "";
+      $("detailTopic").value = detailDraft.topic || "";
+      $("detailTier").value = detailDraft.tier || "B";
+      $("detailStatus").value = detailDraft.status || "TODO";
+      $("detailSolvedDate").value = detailDraft.solvedDate || "";
+      $("detailRevision").value = String(detailDraft.revision ?? 1);
+      $("detailLastReviewed").value = detailDraft.lastReviewed || "";
+      $("detailNotes").value = detailDraft.notes || "";
+      updateComputedDetails();
+      renderHistory(detailDraft.history || []);
+    }
 
-      if (!row.problem.trim()) {
-        alert("Enter a problem name / ID first.");
+    function readDetailsForm() {
+      detailDraft.problem = $("detailProblem").value.trim();
+      detailDraft.topic = $("detailTopic").value.trim();
+      detailDraft.tier = $("detailTier").value;
+      detailDraft.status = $("detailStatus").value;
+      detailDraft.solvedDate = $("detailSolvedDate").value;
+      detailDraft.revision = Number($("detailRevision").value);
+      detailDraft.lastReviewed = $("detailLastReviewed").value;
+      detailDraft.notes = $("detailNotes").value;
+      return detailDraft;
+    }
+
+    function updateComputedDetails() {
+      readDetailsForm();
+      const next = getNextReview(detailDraft);
+      $("detailNextReview").textContent = next ? formatDate(next) : "Not scheduled";
+      $("drawerTitle").textContent = detailDraft.problem || (editingId ? "Problem details" : "New problem");
+    }
+
+    function renderHistory(history) {
+      $("historyList").innerHTML = history.map(item => `<li class="history-item"><span>${escapeHtml(item.label || `Revision ${item.revision} completed`)}</span><span class="history-date">${formatDate(item.date)}</span></li>`).join("");
+      $("historyEmpty").classList.toggle("hidden", history.length > 0);
+    }
+
+    function closeDetails() {
+      drawerLayer.classList.add("hidden");
+      document.body.classList.remove("drawer-open");
+      editingId = null;
+      detailDraft = null;
+    }
+
+    function saveDetails() {
+      const draft = readDetailsForm();
+      if (!draft.problem) {
+        $("detailProblem").setCustomValidity("Enter a problem name or ID.");
+        $("detailProblem").reportValidity();
         return;
       }
-
-      if (row.tier === "A" || row.status === "GRADUATED") {
-        row.status = "GRADUATED";
-        saveRows();
-        render();
-        return;
-      }
-
-      row.lastReviewed = todayISO();
-
-      const currentRevision = Number(row.revision || 1);
-      if (currentRevision >= 3) {
-        row.status = "GRADUATED";
-        row.revision = 3;
+      $("detailProblem").setCustomValidity("");
+      normalizeRow(draft);
+      if (editingId) {
+        const index = rows.findIndex(row => row.id === editingId);
+        if (index !== -1) rows[index] = draft;
       } else {
-        row.revision = currentRevision + 1;
+        rows.unshift(draft);
+      }
+      saveRows();
+      closeDetails();
+      render();
+    }
+
+    function markReviewed(id) {
+      const row = rows.find(item => item.id === id);
+      if (!row || row.status === "GRADUATED") return;
+      normalizeRow(row);
+      const completedRevision = Number(row.revision || 1);
+      row.lastReviewed = todayISO();
+      row.history = Array.isArray(row.history) ? row.history : [];
+      row.history.unshift({ date: row.lastReviewed, revision: completedRevision, label: `Revision ${completedRevision} completed` });
+      if (completedRevision >= 3 || row.tier === "A") {
+        row.status = "GRADUATED";
+        row.revision = row.tier === "A" ? 0 : 3;
+      } else {
+        row.revision = completedRevision + 1;
         row.status = "ACTIVE";
       }
+      saveRows();
+      if (editingId === id) {
+        detailDraft = structuredClone(row);
+        fillDetailsForm();
+        $("drawerReviewBtn").classList.toggle("hidden", row.status === "GRADUATED");
+      }
+      render();
+    }
 
+    function markReviewedFromDrawer() {
+      if (!editingId) return;
+      const draft = readDetailsForm();
+      if (!draft.problem) {
+        $("detailProblem").setCustomValidity("Enter a problem name or ID.");
+        $("detailProblem").reportValidity();
+        return;
+      }
+      $("detailProblem").setCustomValidity("");
+      normalizeRow(draft);
+      const index = rows.findIndex(row => row.id === editingId);
+      if (index !== -1) rows[index] = draft;
+      markReviewed(editingId);
+    }
+
+    function duplicateRow(id) {
+      const source = rows.find(row => row.id === id);
+      if (!source) return;
+      const copy = structuredClone(source);
+      copy.id = makeId();
+      copy.problem = `${copy.problem} (copy)`;
+      rows.splice(rows.findIndex(row => row.id === id) + 1, 0, copy);
+      openMenuId = null;
       saveRows();
       render();
     }
 
     function graduateNow(id) {
-      const row = rows.find(r => r.id === id);
+      const row = rows.find(item => item.id === id);
       if (!row) return;
       row.status = "GRADUATED";
+      openMenuId = null;
       saveRows();
       render();
     }
 
     function deleteRow(id) {
-      rows = rows.filter(r => r.id !== id);
-      if (!rows.length) rows.push(newRow());
+      const row = rows.find(item => item.id === id);
+      if (!row || !confirm(`Delete “${row.problem}”?`)) return;
+      rows = rows.filter(item => item.id !== id);
+      openMenuId = null;
       saveRows();
       render();
     }
 
-    function duplicateRow(id) {
-      const row = rows.find(r => r.id === id);
-      if (!row) return;
-      const copy = { ...row, id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()) };
-      rows.splice(rows.findIndex(r => r.id === id) + 1, 0, copy);
-      saveRows();
+    function clearFilters() {
+      activeView = "all";
+      searchInput.value = "";
+      topicFilter.value = "";
+      tierFilter.value = "";
+      statusFilter.value = "";
       render();
     }
 
-    function render() {
-      rows.forEach(normalizeRow);
-
-      const query = searchInput.value.trim().toLowerCase();
-      tbody.innerHTML = "";
-
-      let total = 0;
-      let overdue = 0;
-      let dueToday = 0;
-      let upcoming = 0;
-      let graduated = 0;
-
-      rows.forEach(row => {
-        const searchable = `${row.problem} ${row.topic} ${row.tier} ${row.status} ${row.notes}`.toLowerCase();
-        if (query && !searchable.includes(query)) return;
-
-        const nextReview = getNextReview(row);
-        const alertState = getAlert(row);
-
-        if (row.problem.trim()) {
-          total++;
-          if (alertState.kind === "overdue") overdue++;
-          if (alertState.kind === "today") dueToday++;
-          if (alertState.kind === "upcoming") upcoming++;
-          if (row.status === "GRADUATED") graduated++;
-        }
-
-        const tr = document.createElement("tr");
-        if (alertState.kind === "overdue") tr.classList.add("overdue");
-        if (alertState.kind === "today") tr.classList.add("today");
-        if (row.status === "GRADUATED") tr.classList.add("graduated");
-
-        tr.innerHTML = `
-          <td class="col-id">
-            <input value="${escapeHtml(row.problem)}" placeholder="e.g. LeetCode 322 - Coin Change"
-              onchange="setField('${row.id}', 'problem', this.value)" />
-          </td>
-          <td class="col-topic">
-            <input value="${escapeHtml(row.topic)}" placeholder="DP / Graph / SQL"
-              onchange="setField('${row.id}', 'topic', this.value)" />
-          </td>
-          <td class="col-tier">
-            <select onchange="setField('${row.id}', 'tier', this.value)">
-              <option value="A" ${row.tier === "A" ? "selected" : ""}>A</option>
-              <option value="B" ${row.tier === "B" ? "selected" : ""}>B</option>
-              <option value="C" ${row.tier === "C" ? "selected" : ""}>C</option>
-            </select>
-          </td>
-          <td class="col-status">
-            <select onchange="setField('${row.id}', 'status', this.value)">
-              <option value="TODO" ${row.status === "TODO" ? "selected" : ""}>TODO</option>
-              <option value="ACTIVE" ${row.status === "ACTIVE" ? "selected" : ""}>ACTIVE</option>
-              <option value="GRADUATED" ${row.status === "GRADUATED" ? "selected" : ""}>GRADUATED</option>
-            </select>
-          </td>
-          <td class="col-date">
-            <input type="date" value="${escapeHtml(row.solvedDate)}"
-              onchange="setField('${row.id}', 'solvedDate', this.value)" />
-          </td>
-          <td class="col-date">
-            <input type="date" value="${escapeHtml(row.lastReviewed)}"
-              onchange="setField('${row.id}', 'lastReviewed', this.value)" />
-          </td>
-          <td class="col-rev">
-            <select onchange="setField('${row.id}', 'revision', this.value)" ${row.tier === "A" ? "disabled" : ""}>
-              <option value="0" ${Number(row.revision) === 0 ? "selected" : ""}>None</option>
-              <option value="1" ${Number(row.revision) === 1 ? "selected" : ""}>1</option>
-              <option value="2" ${Number(row.revision) === 2 ? "selected" : ""}>2</option>
-              <option value="3" ${Number(row.revision) === 3 ? "selected" : ""}>3</option>
-            </select>
-          </td>
-          <td class="col-next">
-            <input readonly value="${nextReview ? escapeHtml(nextReview) : ""}" placeholder="Auto" />
-          </td>
-          <td class="col-days">
-            <span class="pill ${alertState.kind}">${escapeHtml(alertState.text)}</span>
-          </td>
-          <td class="col-notes">
-            <textarea placeholder="Mistake, pattern, trick..."
-              onchange="setField('${row.id}', 'notes', this.value)">${escapeHtml(row.notes)}</textarea>
-          </td>
-          <td class="col-actions">
-            <div class="actions">
-              <button class="success" onclick="revisionDone('${row.id}')">Revision done</button>
-              <button onclick="graduateNow('${row.id}')">Graduate</button>
-              <button onclick="duplicateRow('${row.id}')">Duplicate</button>
-              <button class="danger" onclick="deleteRow('${row.id}')">Delete</button>
-            </div>
-          </td>
-        `;
-
-        tbody.appendChild(tr);
+    function setCloudStatus(message) { $("cloudStatus").textContent = message; }
+    function updateAuthUi() {
+      const signedIn = Boolean(currentUser);
+      $("signedOutView").classList.toggle("hidden", signedIn);
+      $("signedInView").classList.toggle("hidden", !signedIn);
+      $("accountDot").classList.toggle("online", signedIn);
+      $("accountLabel").textContent = signedIn ? (currentUser.email || "Account") : "Sign in";
+      $("signedInEmail").textContent = currentUser?.email || "Account";
+      setCloudStatus(signedIn ? "Cloud sync is active." : "Saved locally on this device.");
+    }
+    function clearAuthTokensFromUrl() {
+      if (location.hash.includes("access_token=") || location.hash.includes("refresh_token=")) history.replaceState({}, document.title, location.pathname);
+    }
+    function isEmailConfirmed(user) { return Boolean(user?.email_confirmed_at || user?.confirmed_at); }
+    async function rejectUnconfirmedUser(user) {
+      if (!user || isEmailConfirmed(user)) return false;
+      currentUser = null;
+      cloudReady = false;
+      await supabaseClient.auth.signOut();
+      updateAuthUi();
+      setCloudStatus("Confirm your email before signing in.");
+      return true;
+    }
+    async function initCloud() {
+      if (!window.supabase) { setCloudStatus("Cloud sync unavailable. Data is saved locally."); return; }
+      supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+      const { data, error } = await supabaseClient.auth.getSession();
+      if (error) { setCloudStatus(error.message); return; }
+      clearAuthTokensFromUrl();
+      currentUser = data.session?.user || null;
+      if (await rejectUnconfirmedUser(currentUser)) return;
+      updateAuthUi();
+      if (currentUser) await loadRowsFromCloud();
+      supabaseClient.auth.onAuthStateChange(async (_event, session) => {
+        currentUser = session?.user || null;
+        cloudReady = false;
+        if (await rejectUnconfirmedUser(currentUser)) return;
+        updateAuthUi();
+        if (currentUser) await loadRowsFromCloud(); else render();
       });
-
-      document.getElementById("totalCount").textContent = total;
-      document.getElementById("overdueCount").textContent = overdue;
-      document.getElementById("todayCount").textContent = dueToday;
-      document.getElementById("upcomingCount").textContent = upcoming;
-      document.getElementById("graduatedCount").textContent = graduated;
-
+    }
+    async function loadRowsFromCloud() {
+      if (!supabaseClient || !currentUser) return;
+      isLoadingCloud = true;
+      setCloudStatus("Loading cloud data…");
+      const { data, error } = await supabaseClient.from(CLOUD_TABLE).select("rows").eq("user_id", currentUser.id).maybeSingle();
+      if (error) { isLoadingCloud = false; setCloudStatus(`Cloud sync unavailable: ${error.message}`); return; }
+      if (Array.isArray(data?.rows) && data.rows.some(isMeaningful)) {
+        rows = normalizeLoadedRows(data.rows);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(rows));
+      }
+      cloudReady = true;
+      isLoadingCloud = false;
+      setCloudStatus("Cloud sync is active.");
+      render();
       saveRows();
     }
-
-    function escapeHtml(value) {
-      return String(value ?? "")
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
+    function scheduleCloudSave() { clearTimeout(cloudSaveTimer); cloudSaveTimer = setTimeout(saveRowsToCloud, 600); }
+    async function saveRowsToCloud() {
+      if (!supabaseClient || !currentUser) return;
+      const { error } = await supabaseClient.from(CLOUD_TABLE).upsert({ user_id: currentUser.id, rows, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
+      setCloudStatus(error ? `Cloud sync failed: ${error.message}` : "All changes synced.");
     }
 
-    document.getElementById("addRowBtn").addEventListener("click", () => {
-      rows.push(newRow());
-      saveRows();
-      render();
-      setTimeout(() => {
-        const inputs = tbody.querySelectorAll("tr:last-child input");
-        if (inputs[0]) inputs[0].focus();
-      }, 0);
+    document.querySelectorAll(".nav-link").forEach(button => button.addEventListener("click", () => { activeView = button.dataset.view; openMenuId = null; render(); }));
+    [searchInput, topicFilter, tierFilter, statusFilter].forEach(control => control.addEventListener(control === searchInput ? "input" : "change", render));
+    $("addProblemBtn").addEventListener("click", () => openDetails());
+    $("emptyActionBtn").addEventListener("click", () => rows.length ? clearFilters() : openDetails());
+    $("closeDrawerBtn").addEventListener("click", closeDetails);
+    $("cancelDrawerBtn").addEventListener("click", closeDetails);
+    $("drawerBackdrop").addEventListener("click", closeDetails);
+    $("saveProblemBtn").addEventListener("click", saveDetails);
+    $("drawerReviewBtn").addEventListener("click", markReviewedFromDrawer);
+    ["detailTier", "detailStatus", "detailSolvedDate", "detailRevision", "detailLastReviewed"].forEach(id => $(id).addEventListener("change", updateComputedDetails));
+    $("detailProblem").addEventListener("input", () => { $("detailProblem").setCustomValidity(""); $("drawerTitle").textContent = $("detailProblem").value || (editingId ? "Problem details" : "New problem"); });
+
+    document.addEventListener("click", event => {
+      if (openMenuId && !event.target.closest(".row-actions")) { openMenuId = null; render(); }
+      if (!$("accountArea").contains(event.target)) { $("accountPopover").classList.add("hidden"); $("accountTrigger").setAttribute("aria-expanded", "false"); }
+    });
+    document.addEventListener("keydown", event => { if (event.key === "Escape" && !drawerLayer.classList.contains("hidden")) closeDetails(); });
+
+    $("accountTrigger").addEventListener("click", () => {
+      const opening = $("accountPopover").classList.contains("hidden");
+      $("accountPopover").classList.toggle("hidden", !opening);
+      $("accountTrigger").setAttribute("aria-expanded", String(opening));
     });
 
-    document.getElementById("clearBtn").addEventListener("click", () => {
-      if (!confirm("Clear all saved rows?")) return;
-      rows = [newRow()];
-      saveRows();
-      render();
-    });
-
-    document.getElementById("exportBtn").addEventListener("click", () => {
+    $("exportBtn").addEventListener("click", () => {
       const blob = new Blob([JSON.stringify(rows, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `revision-tracker-${todayISO()}.json`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `revision-tracker-${todayISO()}.json`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
       URL.revokeObjectURL(url);
     });
-
-    document.getElementById("importBtn").addEventListener("click", () => {
-      document.getElementById("importFile").click();
-    });
-
-    document.getElementById("importFile").addEventListener("change", event => {
+    $("importBtn").addEventListener("click", () => $("importFile").click());
+    $("importFile").addEventListener("change", event => {
       const file = event.target.files[0];
       if (!file) return;
-
       const reader = new FileReader();
       reader.onload = () => {
         try {
           const imported = JSON.parse(reader.result);
-          if (!Array.isArray(imported)) throw new Error("Invalid file");
+          if (!Array.isArray(imported)) throw new Error();
           rows = normalizeLoadedRows(imported);
           saveRows();
           render();
-        } catch {
-          alert("Could not import this JSON file.");
-        }
+        } catch { alert("This file is not a valid Revision Tracker export."); }
       };
       reader.readAsText(file);
       event.target.value = "";
     });
 
-    searchInput.addEventListener("input", render);
-
-    signInBtn.addEventListener("click", async () => {
+    $("signInBtn").addEventListener("click", async () => {
       if (!supabaseClient) return;
-      const email = authEmail.value.trim();
-      const password = authPassword.value;
-      if (!email || !password) {
-        alert("Enter email and password.");
-        return;
-      }
-
-      setCloudStatus("Signing in...");
+      const email = $("authEmail").value.trim();
+      const password = $("authPassword").value;
+      if (!email || !password) { setCloudStatus("Enter your email and password."); return; }
+      setCloudStatus("Signing in…");
       const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-      if (error) {
-        setCloudStatus(error.message);
-        return;
-      }
-
+      if (error) { setCloudStatus(error.message); return; }
       await rejectUnconfirmedUser(data.user);
     });
-
-    signUpBtn.addEventListener("click", async () => {
+    $("signUpBtn").addEventListener("click", async () => {
       if (!supabaseClient) return;
-      const email = authEmail.value.trim();
-      const password = authPassword.value;
-      if (!email || !password) {
-        alert("Enter email and password.");
-        return;
-      }
-
-      setCloudStatus("Creating account...");
-      const { data, error } = await supabaseClient.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: getAuthRedirectUrl()
-        }
-      });
-      if (error) {
-        setCloudStatus(error.message);
-        return;
-      }
-
-      if (data.session) {
-        currentUser = null;
-        cloudReady = false;
-        await supabaseClient.auth.signOut();
-        updateAuthUi();
-      }
-
-      setCloudStatus("Account created. Check your email to confirm it, then sign in.");
+      const email = $("authEmail").value.trim();
+      const password = $("authPassword").value;
+      if (!email || !password) { setCloudStatus("Enter your email and password."); return; }
+      setCloudStatus("Creating account…");
+      const { data, error } = await supabaseClient.auth.signUp({ email, password, options: { emailRedirectTo: APP_URL } });
+      if (error) { setCloudStatus(error.message); return; }
+      if (data.session) { currentUser = null; cloudReady = false; await supabaseClient.auth.signOut(); updateAuthUi(); }
+      setCloudStatus("Check your email to confirm your account.");
     });
+    $("signOutBtn").addEventListener("click", async () => { if (supabaseClient) await supabaseClient.auth.signOut(); });
 
-    signOutBtn.addEventListener("click", async () => {
-      if (!supabaseClient) return;
-      await supabaseClient.auth.signOut();
-    });
-
-    render();
-    initCloud();
-
-    window.setField = setField;
-    window.revisionDone = revisionDone;
+    window.openDetails = openDetails;
+    window.markReviewed = markReviewed;
+    window.toggleRowMenu = toggleRowMenu;
+    window.duplicateRow = duplicateRow;
     window.graduateNow = graduateNow;
     window.deleteRow = deleteRow;
-    window.duplicateRow = duplicateRow;
+
+    updateAuthUi();
+    render();
+    initCloud();
   </script>
 </body>
 </html>
